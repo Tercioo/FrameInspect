@@ -3,6 +3,8 @@
 	
 	<Include file="CallbackHandler-1.0\CallbackHandler-1.0.xml"/>
 	<Include file="AceAddon-3.0\AceAddon-3.0.xml" />
+	<Include file="AceComm-3.0\AceComm-3.0.xml" />
+	<Include file="AceSerializer-3.0\AceSerializer-3.0.xml" />
 	<Include file="LibSharedMedia-3.0\lib.xml" />
 	<Script file="LibWindow-1.1\LibWindow-1.1.lua"/>
 	<Include file="DF\load.xml"/>
