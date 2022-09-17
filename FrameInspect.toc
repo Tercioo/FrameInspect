@@ -1,0 +1,15 @@
+## Interface: 90207
+## Title: Frame Inspect
+## Notes: An addon by Terciob, useful to inspect frames.
+## SavedVariables: FrameInspectDB
+
+## X-Curse-Project-ID: 677290
+## X-Wago-ID: anKW73KE
+
+#@no-lib-strip@
+libs\libs.xml
+#@end-no-lib-strip@
+
+FrameInspect_Init.lua
+FrameInspect_ChildrenFrames.lua
+FrameInspect_Frames.lua
