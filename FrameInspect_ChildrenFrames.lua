@@ -17,11 +17,6 @@ local getMemberNameInParentFrame = function(parentFrame, child)
         end
     end
 
-    local childName = child:GetName()
-    if (childName) then
-        return childName, CONST_MEMBER_NAME_COLOR
-    end
-
     local parentObjectType = parentFrame:GetObjectType()
     if (parentObjectType == "StatusBar") then
         local childObjectType = child:GetObjectType()
@@ -30,6 +25,11 @@ local getMemberNameInParentFrame = function(parentFrame, child)
                 return "StatusBar Texture", "olive"
             end
         end
+    end
+
+    local childName = child:GetName()
+    if (childName) then
+        return "_G." .. childName, CONST_MEMBER_NAME_COLOR
     end
 
     local memoryAddress = tostring(child)

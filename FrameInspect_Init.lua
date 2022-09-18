@@ -133,7 +133,6 @@ function _G.FrameInspect.Inspect(UIElement)
     if (UIElement) then
         if (UIElement.GetObjectType) then
             toggleWindow(true)
-            frameInspect.StartInspecting()
             frameInspect.InspectThisObject(UIElement)
         end
     end
