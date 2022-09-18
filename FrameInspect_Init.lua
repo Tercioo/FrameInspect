@@ -15,6 +15,7 @@
 
 
 local addonName, frameInspect = ...
+_G.FrameInspect = {}
 
 --load Details! Framework
 local DF = _G ["DetailsFramework"]
@@ -81,12 +82,25 @@ SLASH_FRAMEINSPECT1 = "/finspect"
 SLASH_FRAMEINSPECT2 = "/frameinspect"
 SLASH_FRAMEINSPECT3 = "/fi"
 
-function SlashCmdList.FRAMEINSPECT(msg, editbox)
+local toggleWindow = function(bVisibility)
+    if (type(bVisibility) == "boolean") then
+        if (bVisibility) then
+            frameInspect.StartInspecting()
+        else
+            frameInspect.StopInspecting()
+        end
+        return
+    end
+
     if (not frameInspect.bIsInspecting) then
         frameInspect.StartInspecting()
     else
         frameInspect.StopInspecting()
     end
+end
+
+function SlashCmdList.FRAMEINSPECT(msg, editbox)
+    toggleWindow()
 end
 
 local handleSavedVariablesFrame = CreateFrame("frame")
@@ -115,3 +129,12 @@ function frameInspect.GetConfig()
     return FrameInspectDB
 end
 
+function _G.FrameInspect.Inspect(UIElement)
+    if (UIElement) then
+        if (UIElement.GetObjectType) then
+            toggleWindow(true)
+            frameInspect.StartInspecting()
+            frameInspect.InspectThisObject(UIElement)
+        end
+    end
+end

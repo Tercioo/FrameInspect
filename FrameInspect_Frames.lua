@@ -122,6 +122,10 @@ function frameInspect.StartPreviewingObject(object, isChildren)
     end
 end
 
+function frameInspect.InspectThisObject(object)
+    frameInspect.StartPreviewingObject(object)
+    frameInspect.StartInspectingObject(object)
+end
 
 function frameInspect.ClearDisabledMouseFrames()
     for index, frameTable in ipairs(currentMouseDisabledFrames) do
@@ -449,7 +453,7 @@ frameInspect.PropertiesList = {
     {name = "Min Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(1, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(value, select(2, frameInspect.GetInspectingObject():GetMinMaxValues())) end, type = "text", filter = {Slider = true}},
     {name = "Max Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(2, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(select(1, frameInspect.GetInspectingObject():GetMinMaxValues()), value) end, type = "text", filter = {Slider = true}},
 
-    {name = "Text", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = {EditBox = true}},
+    {name = "Text", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = {EditBox = true, FontString = true}},
 
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
