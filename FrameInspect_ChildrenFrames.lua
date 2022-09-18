@@ -8,21 +8,33 @@ if (not DF) then
     return
 end
 
+local CONST_MEMBER_NAME_COLOR = "orange"
+
 local getMemberNameInParentFrame = function(parentFrame, child)
     for memberName, value in pairs(parentFrame) do
         if (value == child) then
-            return "." .. memberName
+            return "." .. memberName, CONST_MEMBER_NAME_COLOR
         end
     end
 
     local childName = child:GetName()
     if (childName) then
-        return childName
+        return childName, CONST_MEMBER_NAME_COLOR
+    end
+
+    local parentObjectType = parentFrame:GetObjectType()
+    if (parentObjectType == "StatusBar") then
+        local childObjectType = child:GetObjectType()
+        if (childObjectType == "Texture") then
+            if (parentFrame:GetStatusBarTexture() == child) then
+                return "StatusBar Texture", "olive"
+            end
+        end
     end
 
     local memoryAddress = tostring(child)
     memoryAddress = memoryAddress:gsub("table%: ", "")
-    return memoryAddress
+    return memoryAddress, CONST_MEMBER_NAME_COLOR
 end
 
 function frameInspect.ClearChildrenFrame()
@@ -60,8 +72,9 @@ function frameInspect.CreateChildrenFrame()
                 local line = self:GetLine(i)
 
                 line.icon.texture = {0, 1, 0, 1}
-                local memberName = getMemberNameInParentFrame(self.frameUnderInspection, object)
+                local memberName, memberColor = getMemberNameInParentFrame(self.frameUnderInspection, object)
                 line.memberName.text = memberName
+                line.memberName.color = memberColor
                 line.valueText.text = ""
                 line.currentParent = childrenFrame.currentParent
 
@@ -246,14 +259,13 @@ function frameInspect.CreateChildrenFrame()
         valueText:SetPoint("left", icon, "right", 2, 7)
 
         --member name
-        local memberName = DF:CreateLabel(line, "", 10, "orange", "GameFontNormal", "memberName", "$parentMemberName", "artwork")
+        local memberName = DF:CreateLabel(line, "", 10, CONST_MEMBER_NAME_COLOR, "GameFontNormal", "memberName", "$parentMemberName", "artwork")
         memberName:SetPoint("left", icon, "right", 2, -8)
 
         --is hidden text
-        local isHiddenText = DF:CreateLabel(line, "hidden", 10, "orange", "GameFontNormal", "hiddenText", "$parentHiddenText", "artwork")
+        local isHiddenText = DF:CreateLabel(line, "hidden", 10, "gray", "GameFontNormal", "hiddenText", "$parentHiddenText", "artwork")
         isHiddenText:SetPoint("left", line, "right", -10, -22)
         isHiddenText.rotation = 90
-        isHiddenText.color = "gray"
         isHiddenText.alpha = 0.6
 
         --highlight texture
@@ -267,5 +279,4 @@ function frameInspect.CreateChildrenFrame()
     for i = 1, frameInspect.FrameSettings.children_scroll_line_amount do
         childrenScrollBox:CreateLine(createChildrenFrame, i)
     end
-
 end
