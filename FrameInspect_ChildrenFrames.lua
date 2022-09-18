@@ -72,22 +72,35 @@ function frameInspect.CreateChildrenFrame()
                 line.hiddenText:SetShown(not object:IsShown())
                 line.icon.texcoord = {0, 1, 0, 1}
 
-                local objType = object:GetObjectType()
-                if (objType == "Texture") then
-                    line.icon.texture = object:GetTexture()
-                    line.icon.texcoord = {object:GetTexCoord()}
-                    line.valueText.text = object:GetTexture()
-                    --print("value:", object:GetTexture(), object:GetAtlas())
+                local objectType = object:GetObjectType()
+                if (objectType == "Texture") then
 
-                elseif (objType == "FontString") then
+                    local setFromAtlas = false
+                    local atlasName = object:GetAtlas()
+                    if (atlasName) then
+                        local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+                        if (atlasInfo) then
+                            line.icon:SetAtlas(atlasName)
+                            line.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                            setFromAtlas = true
+                        end
+                    end
+
+                    if (not setFromAtlas) then
+                        line.icon.texture = object:GetTexture()
+                        line.icon:SetTexCoord(object:GetTexCoord())
+                        line.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                    end
+
+                elseif (objectType == "FontString") then
                     line.valueText.text = object:GetText()
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_string]]
 
-                elseif (objType == "EditBox") then
+                elseif (objectType == "EditBox") then
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_editbox]]
                     line.valueText.text = object:GetText()
 
-                elseif (objType == "Button") then
+                elseif (objectType == "Button") then
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_button]]
 
                 else

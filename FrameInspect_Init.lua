@@ -46,11 +46,12 @@ frameInspect.FrameSettings = {
     frame_info_text2_x = 130, --where the text entry starts  (x offset from the start of the line)
     frame_info_text2_width = 120, --size of the text entry
 
-    children_width = 222,
-    children_button_width = 190,
-    children_scroll_width = 196,
+    children_width = 242,
+    children_button_width = 210,
+    children_scroll_width = 216,
     children_scroll_line_amount = 12,
     children_scroll_line_height = 40,
+    children_scroll_line_max_texture_name_length = 155,
 }
 
 frameInspect.inspectingFrame = false
