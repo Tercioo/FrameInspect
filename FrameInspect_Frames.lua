@@ -355,6 +355,33 @@ local setBackdropData = function(value, dataIndex, r, g, b, a)
     end
 end
 
+local getTexCoord = function(texture, side)
+    local atlasName = texture:GetAtlas()
+    if (atlasName) then
+        local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+        if (side == "left") then
+            return DF:TruncateNumber(atlasInfo.leftTexCoord, 6)
+        elseif (side == "right") then
+            return DF:TruncateNumber(atlasInfo.rightTexCoord, 6)
+        elseif (side == "top") then
+            return DF:TruncateNumber(atlasInfo.topTexCoord, 6)
+        elseif (side == "bottom") then
+            return DF:TruncateNumber(atlasInfo.bottomTexCoord, 6)
+        end
+    else
+        local left, right, top, bottom = texture:GetTexCoord()
+        if (side == "left") then
+            return DF:TruncateNumber(left, 6)
+        elseif (side == "right") then
+            return DF:TruncateNumber(right, 6)
+        elseif (side == "top") then
+            return DF:TruncateNumber(top, 6)
+        elseif (side == "bottom") then
+            return DF:TruncateNumber(bottom, 6)
+        end
+    end
+end
+
 local setTexCoord = function(texture, side, value)
     local left, right, top, bottom = texture:GetTexCoord()
     if (side == "left") then
@@ -426,10 +453,10 @@ frameInspect.PropertiesList = {
 
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
-    {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(1, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
-    {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
-    {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(3, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
-    {name = "TexCoord Bottom", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(4, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "bottom", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "left"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "right"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "top"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Bottom", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "bottom"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "bottom", value) end, type = "number", filter = textureFilter},
 }
 
 --this table store the text entries for each of the information declared above
