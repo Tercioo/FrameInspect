@@ -402,6 +402,22 @@ local setTexCoord = function(texture, side, value)
     end
 end
 
+local getFunctionName = function(functionObject)
+    local mixinPath = frameInspect.GetMixinFunctionAddress(functionObject)
+    if (mixinPath) then
+        return mixinPath
+    end
+
+    local functionMap = frameInspect.GetFunctionMap()
+    local functionGlobalName = functionMap[tostring(functionObject)]
+    if (functionGlobalName) then
+        return functionGlobalName
+    end
+
+    local address = tostring(functionObject)
+    return address
+end
+
 function frameInspect.GetDefaultValue(line)
     return frameInspect.DefaultValues[line.name]
 end
@@ -418,17 +434,22 @@ local canSetAsDefault = function(object, value, line, setAsDefault)
     return value
 end
 
+
 --to add new entry: add the information on the table below
 
 --Frame Texture
 local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true}
 local textureFilter = {Texture = true, MaskTexture = true}
+local buttonFilter = {Button = true}
 
 --all information displayed in the frame info (read only table)
 frameInspect.PropertiesList = {
     {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetName() or "--x--x--", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "--x--x--", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
+
+    {name = "OnClick", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+
     {name = "Is Shown", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:IsShown(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetShown(value) end, type = "boolean"},
     {name = "Width", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetWidth(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetWidth(value) end, type = "number"},
     {name = "Height", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetHeight(), 3), line, setAsDefault) end,  funcSet = function(value) frameInspect.GetInspectingObject():SetHeight(value) end, type = "number"},
@@ -684,6 +705,7 @@ function frameInspect.CreateInformationFrame()
                         line.booleanDropdown:Show()
                         line.booleanDropdown:Select(value and 1 or 2, true) --select by index as selecting 'false' trigger another thing
                         textEntry.text = value and "true" or "false"
+                        textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
                     end
 
                     line.currentValue = value
@@ -693,11 +715,13 @@ function frameInspect.CreateInformationFrame()
                     line.object = object
 
                     if (lineInfo.readOnly) then
-                        textEntry:Disable()
+                        textEntry:SetTemplate(DF:GetTemplate("dropdown", "FRAMEINSPECT_DISABLED_TEXTFIELD"))
+                        textEntry.isReadOnly = true
                         colorPicker:Disable()
                         adjustmentSlider:Disable()
                     else
-                        textEntry:Enable()
+                        textEntry:SetTemplate(options_dropdown_template)
+                        textEntry.isReadOnly = nil
                         colorPicker:Enable()
                         adjustmentSlider:Enable()
                     end
@@ -765,6 +789,11 @@ function frameInspect.CreateInformationFrame()
 
         --text entry for text values
         local textEntryCallback = function()
+            if (line.textEntry.isReadOnly) then
+                frameInspect.ResetDefault(line)
+                return
+            end
+
             if (line.type == "color") then
                 local r, g, b, a = DF:ParseColors(line.textEntry.text)
                 if (r and g and b and a) then

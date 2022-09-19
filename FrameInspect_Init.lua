@@ -58,15 +58,13 @@ frameInspect.FrameSettings = {
 frameInspect.inspectingFrame = false
 frameInspect.focusFrame = false
 
-local settingsScrollBox = frameInspect.FrameSettings.settingsScrollBox
-local codeEditorFrameSettings = frameInspect.FrameSettings.settingsCodeEditor
-local buttonsFrameSettings = frameInspect.FrameSettings.settingsButtons
-local optionsFrameSettings = frameInspect.FrameSettings.settingsOptionsFrame
+DetailsFramework:InstallTemplate("dropdown", "FRAMEINSPECT_DISABLED_TEXTFIELD", {
+	backdropcolor = {.3, .3, .3, .8},
+}, "OPTIONS_DROPDOWN_TEMPLATE")
 
 function frameInspect.OnInit()
     DF:Embed(frameInspect)
 end
-
 
 function frameInspect.StartInspecting()
     frameInspect.CreateInformationFrame()
@@ -117,6 +115,7 @@ handleSavedVariablesFrame:SetScript("OnEvent", function(self, event, ...)
         end
 
     elseif (event == "PLAYER_LOGIN") then
+        frameInspect.CreateMaps()
         frameInspect.OnInit()
 
     elseif (event == "PLAYER_LOGOUT") then
@@ -134,6 +133,54 @@ function _G.FrameInspect.Inspect(UIElement)
         if (UIElement.GetObjectType) then
             toggleWindow(true)
             frameInspect.InspectThisObject(UIElement)
+        end
+    end
+end
+
+function frameInspect.CreateMaps()
+    local mixinMap = {}
+    local functionMap = {}
+
+    for memberName, value in pairs(_G) do
+        if (type(memberName) == "string") then
+            if (memberName:match("Mixin$") and type(value) == "table") then
+                local thisMixinTable = {}
+                mixinMap[memberName] = thisMixinTable
+                for mixinMemberName, object in pairs(value) do
+                    if (type(mixinMemberName) == "string" and type(object) == "function") then
+                        --don't assign the object itself to avoid a taint
+                        thisMixinTable[mixinMemberName] = tostring(object)
+                    end
+                end
+
+            elseif (type(value) == "function") then
+                local address = tostring(value)
+                functionMap[address] = memberName
+            end
+        end
+    end
+
+    frameInspect.mixinMap = mixinMap
+    frameInspect.functionMap = functionMap
+end
+
+function frameInspect.GetMixinMap()
+    return frameInspect.mixinMap
+end
+
+function frameInspect.GetFunctionMap()
+    return frameInspect.functionMap
+end
+
+function frameInspect.GetMixinFunctionAddress(functionObject)
+    local address = tostring(functionObject)
+    if (address) then
+        for mixinName, mixinTable in pairs(frameInspect.mixinMap) do
+            for mixinMemberName, functionAddress in pairs(mixinTable) do
+                if (address == functionAddress) then
+                    return mixinName .. "." .. mixinMemberName
+                end
+            end
         end
     end
 end
