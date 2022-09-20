@@ -57,6 +57,9 @@ function frameInspect.CreateChildrenFrame()
     childrenFrame:SetBackdropColor(mainFrame:GetBackdropColor())
     childrenFrame:SetBackdropBorderColor(mainFrame:GetBackdropBorderColor())
 
+    local rightClickHelpText = DF:CreateLabel(childrenFrame, "right click: back to parent", 11, "white", "GameFontNormal")
+    rightClickHelpText:SetPoint("bottom", childrenFrame, "bottom", 0, 5)
+
     childrenFrame:SetScript("OnClick", function(self, mouseButton)
         if (mouseButton == "RightButton") then
             --go up
@@ -78,11 +81,15 @@ function frameInspect.CreateChildrenFrame()
                 line.valueText.text = ""
                 line.currentParent = childrenFrame.currentParent
 
+                local isShown
                 if (not object.IsShown) then
-                    print(object:GetObjectType(), "has no IsShown()", memberName, object.GetName and object:GetName())
+                    print("ObjectType:", object:GetObjectType(), "has no IsShown()", "Member:", memberName, "Name:", object.GetName and object:GetName())
+                    isShown = false
+                else
+                    isShown = not object:IsShown()
                 end
 
-                line.hiddenText:SetShown(not object:IsShown())
+                line.hiddenText:SetShown(isShown)
                 line.icon.texcoord = {0, 1, 0, 1}
 
                 local objectType = object:GetObjectType()
@@ -141,6 +148,7 @@ function frameInspect.CreateChildrenFrame()
     local ignoredObjectTypes = {
         ["AnimationGroup"] = true,
         ["Animation"] = true,
+        ["Font"] = true,
     }
 
     function childrenScrollBox.RefreshChildren(object)

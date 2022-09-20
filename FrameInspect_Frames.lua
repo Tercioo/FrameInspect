@@ -444,8 +444,8 @@ local buttonFilter = {Button = true}
 
 --all information displayed in the frame info (read only table)
 frameInspect.PropertiesList = {
-    {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetName() or "--x--x--", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
-    {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "--x--x--", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetName() or "nil", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "-Unknown-", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
 
     {name = "OnClick", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
