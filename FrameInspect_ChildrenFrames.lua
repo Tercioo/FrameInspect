@@ -67,34 +67,41 @@ function frameInspect.CreateChildrenFrame()
         end
     end)
 
+    local objectTypeIsAnimation = function(objectType)
+        return objectType == "Alpha" or objectType == "Scale" or objectType == "Translation" or objectType ==  "Rotation"
+    end
+
     local refreshChildrenScroll = function(self, data, offset, totalLines)
         for i = 1, totalLines do
             local index = i + offset
             local object = data[index]
             if (object) then
                 local line = self:GetLine(i)
+                local objectType = object:GetObjectType()
 
                 line.icon.texture = {0, 1, 0, 1}
-                local memberName, memberColor = getMemberNameInParentFrame(self.frameUnderInspection, object)
-                line.memberName.text = memberName
-                line.memberName.color = memberColor
-                line.valueText.text = ""
-                line.currentParent = childrenFrame.currentParent
-
-                local isShown
-                if (not object.IsShown) then
-                    print("ObjectType:", object:GetObjectType(), "has no IsShown()", "Member:", memberName, "Name:", object.GetName and object:GetName())
-                    isShown = false
+                local memberName, memberColor
+                if (objectTypeIsAnimation(objectType)) then
+                    memberName, memberColor = getMemberNameInParentFrame(object:GetTarget():GetParent(), object:GetTarget())
                 else
-                    isShown = not object:IsShown()
+                    memberName, memberColor = getMemberNameInParentFrame(self.frameUnderInspection, object)
                 end
 
-                line.hiddenText:SetShown(isShown)
+                line.valueText.text = ""
+                line.memberName.text = memberName
+                line.memberName.color = memberColor
+
+                line.currentParent = childrenFrame.currentParent
+
+                line.hiddenText:SetShown(object.IsShown and object:IsShown())
                 line.icon.texcoord = {0, 1, 0, 1}
 
-                local objectType = object:GetObjectType()
-                if (objectType == "Texture") then
+                if (line.icon.currentPlayingAnimationPreview) then
+                    line.icon.currentPlayingAnimationPreview:Stop()
+                    line.icon.currentPlayingAnimationPreview = nil
+                end
 
+                if (objectType == "Texture") then
                     local setFromAtlas = false
                     local atlasName = object:GetAtlas()
                     if (atlasName) then
@@ -123,6 +130,36 @@ function frameInspect.CreateChildrenFrame()
                 elseif (objectType == "Button") then
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_button]]
 
+                elseif (objectType == "AnimationGroup") then
+                    line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_animation_group]]
+
+                elseif (objectType == "Alpha") then --Animation
+                    line.valueText.text = "Alpha"
+                    local returnValue = line.icon:SetAnimation(object)
+                    if (not returnValue) then
+                        line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_animation_alpha]]
+                    end
+
+                elseif (objectType == "Translation") then --Animation
+                    line.valueText.text = "Translation"
+                    local returnValue = line.icon:SetAnimation(object)
+                    if (not returnValue) then
+                        line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_animation_translation]]
+                    end
+
+                elseif (objectType == "Rotation") then --Animation
+                    line.valueText.text = "Rotation"
+                    local returnValue = line.icon:SetAnimation(object)
+                    if (not returnValue) then
+                        line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_animation_rotation]]
+                    end
+
+                elseif (objectType == "Scale") then --Animation
+                    line.valueText.text = "Scale"
+                    local returnValue = line.icon:SetAnimation(object)
+                    if (not returnValue) then
+                        line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_animation_scale]]
+                    end
                 else
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_frame]]
 
@@ -146,8 +183,8 @@ function frameInspect.CreateChildrenFrame()
     end)
 
     local ignoredObjectTypes = {
-        ["AnimationGroup"] = true,
-        ["Animation"] = true,
+        --["AnimationGroup"] = true,
+        --["Animation"] = true,
         ["Font"] = true,
     }
 
@@ -165,6 +202,11 @@ function frameInspect.CreateChildrenFrame()
             if (object.GetRegions) then
                 local regions = {object:GetRegions()} --textures, fontstrings, etc...
                 DF.table.append(objects, regions)
+            end
+
+            if (object.GetAnimations) then
+                local animations = {object:GetAnimations()}
+                DF.table.append(objects, animations)
             end
 
             for memberName, memberValue in pairs(object) do
@@ -208,7 +250,6 @@ function frameInspect.CreateChildrenFrame()
             frameInspect.BackToParent()
         end
     end
-
     local onEnterLine = function(line)
         if (frameInspect.CanInspectObject(line.childObject)) then
             local mouseX, mouseY = GetCursorPosition()
@@ -237,6 +278,71 @@ function frameInspect.CreateChildrenFrame()
         end
     end
 
+    --animationObject is the animation created from animationGroup:CreateAnimation()
+    --self is the icon shown in the one of the frames of the childrenScrollBox
+    local iconMethod_SetAndPlayAnimation = function(self, animationObject)
+        --set the texture
+        local animationTarget = animationObject:GetTarget()
+        local targetAnimationObjectType = animationTarget and animationTarget.GetObjectType and animationTarget:GetObjectType()
+        if (not targetAnimationObjectType or targetAnimationObjectType ~= "Texture") then
+            return
+        end
+
+        local atlas = animationTarget:GetAtlas()
+        if (atlas) then
+            self:SetAtlas(atlas)
+        else
+            local texturePath = animationTarget:GetTexture()
+            local left, right, top, bottom = animationTarget:GetTexCoord()
+            self:SetTexture(texturePath)
+            self:SetTexCoord(left, right, top, bottom)
+        end
+
+        local stringAddress = tostring(animationObject) --avoid setting the object to avoid affect weaktables and taint issues
+        local animationHub = self.animations[stringAddress]
+        if (not animationHub) then
+            animationHub = self:CreateAnimationGroup()
+            self.animations[stringAddress] = animationHub
+            animationHub:SetLooping("REPEAT")
+
+            --create the animation, an animation object always return its animationType when querying its objectType
+            local animationType = animationObject:GetObjectType()
+            local animation = animationHub:CreateAnimation(animationType)
+            animationHub.animation = animation
+            animationHub.animationType = animationType
+        end
+
+        local animation = animationHub.animation
+
+        if (animationHub.animationType == "Alpha") then
+            animation:SetFromAlpha(animationObject:GetFromAlpha())
+            animation:SetToAlpha(animationObject:GetToAlpha())
+
+        elseif (animationHub.animationType == "Rotation") then
+            animation:SetOrigin(animationObject:GetOrigin())
+            if (animationObject:GetDegrees() and animationObject:GetDegrees() ~= 0) then
+                animation:SetDegrees(animationObject:GetDegrees())
+            end
+            if (animationObject:GetRadians() and animationObject:GetRadians() ~= 0) then
+                animation:SetRadians(animationObject:GetRadians())
+            end
+
+        elseif (animationHub.animationType == "Scale") then
+            animation:SetOrigin(animationObject:GetOrigin())
+			animation:SetScaleFrom(animation:GetScaleFrom())
+			animation:SetScaleTo(animation:GetScaleTo())
+
+        elseif (animationHub.animationType == "Translation") then
+            animation:SetOffset(animationObject:GetOffset())
+        end
+
+        animation:SetDuration(animationObject:GetDuration())
+        --some animations isn't playing...
+        animationHub:Play()
+        self.currentPlayingAnimationPreview = animationHub
+        return animationHub
+    end
+
     local createChildrenFrame = function(self, lineId)
         local lineHeight = frameInspect.FrameSettings.children_scroll_line_height
 
@@ -261,6 +367,8 @@ function frameInspect.CreateChildrenFrame()
         --icon to preview the texture
         local icon = DF:CreateImage(line, "", lineHeight-2, lineHeight-2, "artwork", {0, 1, 0, 1}, "icon", "$parentIcon")
         icon:SetPoint("left", line, "left", 2, 0)
+        icon.animations = {}
+        icon.SetAnimation = iconMethod_SetAndPlayAnimation
 
         --value
         local valueText = DF:CreateLabel(line, "", 10, "silver", "GameFontNormal", "valueText", "$parentValueText", "artwork")

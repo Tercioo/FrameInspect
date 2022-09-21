@@ -42,6 +42,12 @@ function frameInspect.MoveInspectIndicators(frame, isChildren)
         return
     end
 
+    --if the object is abstract: animationGroup, animations
+    if (not frame.GetPoint) then
+        onFocusBorder:Hide()
+        return
+    end
+
     frame = frame.dframework and frame.widget or frame
 
     onFocusBorder:SetFrameStrata("TOOLTIP")
@@ -236,12 +242,12 @@ local onUpdateRoutine = function(self, deltaTime)
         end
     else
         --if the object current being inspected is hidden
-        if (not frameInspect.GetInspectingObject():IsShown()) then
+        --if (not frameInspect.GetInspectingObject():IsShown()) then
             --frameInspect.ClearInformationFrame()
             --frameInspect.ClearDisabledMouseFrames()
             --frameInspect.ClearChildrenFrame()
             --print("is hidden...")
-        end
+        --end
     end
 end
 
@@ -438,9 +444,19 @@ end
 --to add new entry: add the information on the table below
 
 --Frame Texture
+local hasTextFilter = {EditBox = true, FontString = true}
 local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true}
 local textureFilter = {Texture = true, MaskTexture = true}
 local buttonFilter = {Button = true}
+local sliderFilter = {Slider = true}
+local notForAnimationFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true}
+local animationGroupFilter = {AnimationGroup = true}
+local animationFilter = {Rotation = true, Alpha = true, Translation = true, Scale = true}
+local animationAlphaFilter = {Alpha = true}
+local animationTranslationFilter = {Translation = true}
+local animationRotationFilter = {Rotation = true}
+local animationScaleFilter = {Scale = true}
+local animationWithOriginFilter = {Scale = true, Rotation = true}
 
 --all information displayed in the frame info (read only table)
 frameInspect.PropertiesList = {
@@ -448,19 +464,20 @@ frameInspect.PropertiesList = {
     {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "-Unknown-", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
 
-    {name = "OnClick", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "OnClick()", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
 
-    {name = "Is Shown", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:IsShown(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetShown(value) end, type = "boolean"},
-    {name = "Width", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetWidth(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetWidth(value) end, type = "number"},
-    {name = "Height", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetHeight(), 3), line, setAsDefault) end,  funcSet = function(value) frameInspect.GetInspectingObject():SetHeight(value) end, type = "number"},
-    {name = "Scale", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetScale(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetScale(value) end, type = "number"},
-    {name = "Alpha", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetAlpha(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetAlpha(value) end, type = "number"},
+    {name = "Is Shown", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:IsShown(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetShown(value) end, type = "boolean", filter = notForAnimationFilter},
+
+    {name = "Width", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetWidth(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetWidth(value) end, type = "number", filter = notForAnimationFilter},
+    {name = "Height", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetHeight(), 3), line, setAsDefault) end,  funcSet = function(value) frameInspect.GetInspectingObject():SetHeight(value) end, type = "number", filter = notForAnimationFilter},
+    {name = "Scale", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetScale(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetScale(value) end, type = "number", filter = notForAnimationFilter},
+    {name = "Alpha", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetAlpha(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetAlpha(value) end, type = "number", filter = notForAnimationFilter},
     {name = "Alpha (Effective)", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetEffectiveAlpha(), 3), line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text", filter = frameFilter},
-    {name = "Anchor Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 1) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 1) end, type = "anchor"},
-    {name = "Anchor Frame", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 2) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 2) end, type = "text"},
-    {name = "Anchor Frame Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 3) end, type = "anchor"},
-    {name = "Anchor Offset X", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 4) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 4) end, type = "number"},
-    {name = "Anchor Offset Y", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 5) end, type = "number"},
+    {name = "Anchor Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 1) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 1) end, type = "anchor", filter = notForAnimationFilter},
+    {name = "Anchor Frame", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 2) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 2) end, type = "text", filter = notForAnimationFilter},
+    {name = "Anchor Frame Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 3) end, type = "anchor", filter = notForAnimationFilter},
+    {name = "Anchor Offset X", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 4) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 4) end, type = "number", filter = notForAnimationFilter},
+    {name = "Anchor Offset Y", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 5) end, type = "number", filter = notForAnimationFilter},
     {name = "Strata", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetFrameStrata(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFrameStrata(value) end, type = "text", filter = frameFilter},
     {name = "Level", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetFrameLevel(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFrameLevel(value) end, type = "number", filter = frameFilter},
 
@@ -470,11 +487,11 @@ frameInspect.PropertiesList = {
     {name = "Border Size", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setBackdropData(value, 3) end, type = "text", filter = frameFilter},
     {name = "Border Color", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(r, g, b, a) setBackdropData(false, 5, r, g, b, a) end, type = "color", filter = frameFilter},
 
-    {name = "Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetValue(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetValue(value) end, type = "text", filter = {Slider = true}},
-    {name = "Min Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(1, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(value, select(2, frameInspect.GetInspectingObject():GetMinMaxValues())) end, type = "text", filter = {Slider = true}},
-    {name = "Max Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(2, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(select(1, frameInspect.GetInspectingObject():GetMinMaxValues()), value) end, type = "text", filter = {Slider = true}},
+    {name = "Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetValue(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetValue(value) end, type = "text", filter = sliderFilter},
+    {name = "Min Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(1, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(value, select(2, frameInspect.GetInspectingObject():GetMinMaxValues())) end, type = "text", filter = sliderFilter},
+    {name = "Max Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(2, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(select(1, frameInspect.GetInspectingObject():GetMinMaxValues()), value) end, type = "text", filter = sliderFilter},
 
-    {name = "Text", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = {EditBox = true, FontString = true}},
+    {name = "Text", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = hasTextFilter},
 
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
@@ -482,6 +499,47 @@ frameInspect.PropertiesList = {
     {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "right"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "top"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Bottom", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "bottom"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "bottom", value) end, type = "number", filter = textureFilter},
+
+    --animation group
+    {name = "Looping", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:GetLooping(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetLooping(value) end, type = "text", filter = animationGroupFilter},
+    {name = "Loop State", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:GetLoopState(), line, setAsDefault) end, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text", filter = animationGroupFilter},
+    {name = "Duration", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:GetDuration(), line, setAsDefault) end, funcSet = function(value) --[[read only]] end, readOnly = true, type = "number", filter = animationGroupFilter},
+    {name = "To Final Alpha", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:IsSetToFinalAlpha(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetToFinalAlpha(value) end, type = "boolean", filter = animationGroupFilter},
+    {name = "Speed Multiplier", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:GetAnimationSpeedMultiplier(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAnimationSpeedMultiplier(value) end, type = "number", filter = animationGroupFilter},
+
+    --all animations
+    {name = "Target", funcGet =  function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetTarget() and animation:GetTarget():GetName() or "-target has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTarget(value) end, type = "text", filter = animationFilter},
+    {name = "Duration", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, DF:TruncateNumber(animation:GetDuration(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDuration(value) end, type = "number", filter = animationFilter},
+    {name = "Start Delay", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetStartDelay(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetStartDelay(value) end, type = "number", filter = animationFilter},
+    {name = "End Delay", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetEndDelay(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetEndDelay(value) end, type = "number", filter = animationFilter},
+    {name = "Smoothing", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetSmoothing(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():GetSmoothing(value) end, type = "text", filter = animationFilter},
+    {name = "Order", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetOrder(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetOrder(value) end, type = "number", filter = animationFilter},
+
+    --alpha animation
+    {name = "From Alpha", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetFromAlpha(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFromAlpha(value) end, type = "number", filter = animationAlphaFilter},
+    {name = "To Alpha", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetToAlpha(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetToAlpha(value) end, type = "number", filter = animationAlphaFilter},
+
+    --translation animation
+    {name = "Offset X", funcGet = function(animation, line, setAsDefault) local x = animation:GetOffset() return canSetAsDefault(animation, DF:TruncateNumber(x, 6), line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() local _, y = animation:GetOffset() animation:SetOffset(value, y) end, type = "number", filter = animationTranslationFilter},
+    {name = "Offset Y", funcGet = function(animation, line, setAsDefault) local _, y = animation:GetOffset() return canSetAsDefault(animation, DF:TruncateNumber(y, 6), line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() local x = animation:GetOffset() animation:SetOffset(x, value) end, type = "number", filter = animationTranslationFilter},
+
+    --rotation animation
+    {name = "Degrees", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, DF:TruncateNumber(animation:GetDegrees(), 6), line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() animation:SetDegrees(value) end, type = "number", filter = animationRotationFilter},
+    {name = "Radians", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, DF:TruncateNumber(animation:GetRadians(), 6), line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() animation:SetRadians(value) end, type = "number", filter = animationRotationFilter},
+
+    --scale animation
+    {name = "From Scale", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetScaleFrom(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetScaleFrom(value) end, type = "number", filter = animationScaleFilter},
+    {name = "To Scale", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, animation:GetScaleTo(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetScaleTo(value) end, type = "number", filter = animationScaleFilter},
+
+    --scale and translation origin point
+    {name = "Origin Point", funcGet = function(animation, line, setAsDefault) local origin, x, y = animation:GetOrigin() return canSetAsDefault(animation, origin, line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() local origin, x, y = animation:GetOrigin() animation:SetOrigin(value, x, y) end, type = "text", filter = animationWithOriginFilter},
+    {name = "Origin X", funcGet =  function(animation, line, setAsDefault) local origin, x, y = animation:GetOrigin() return canSetAsDefault(animation, x, line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() local origin, x, y = animation:GetOrigin() animation:SetOrigin(origin, value, y) end, type = "number", filter = animationWithOriginFilter},
+    {name = "Origin Y", funcGet =  function(animation, line, setAsDefault) local origin, x, y = animation:GetOrigin() return canSetAsDefault(animation, y, line, setAsDefault) end, funcSet = function(value) local animation = frameInspect.GetInspectingObject() local origin, x, y = animation:GetOrigin() animation:SetOrigin(origin, x, value) end, type = "number", filter = animationWithOriginFilter},
+
+    --animation scripts
+    {name = "OnPlay()", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, getFunctionName(animation:GetScript("OnPlay")), line, setAsDefault) end, filter = animationFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "OnFinished()", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, getFunctionName(animation:GetScript("OnFinished")), line, setAsDefault) end, filter = animationFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "OnUpdate()", funcGet = function(animation, line, setAsDefault) return canSetAsDefault(animation, getFunctionName(animation:GetScript("OnUpdate")), line, setAsDefault) end, filter = animationFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
 }
 
 --this table store the text entries for each of the information declared above
