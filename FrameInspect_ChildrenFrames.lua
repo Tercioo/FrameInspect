@@ -93,7 +93,7 @@ function frameInspect.CreateChildrenFrame()
 
                 line.currentParent = childrenFrame.currentParent
 
-                line.hiddenText:SetShown(object.IsShown and object:IsShown())
+                line.hiddenText:SetShown(object.IsShown and not object:IsShown())
                 line.icon.texcoord = {0, 1, 0, 1}
 
                 if (line.icon.currentPlayingAnimationPreview) then
@@ -263,6 +263,11 @@ function frameInspect.CreateChildrenFrame()
                 end
             end
         end
+
+        local animationHub = line.icon.currentPlayingAnimationPreview
+        if (animationHub) then
+            animationHub:Play()
+        end
     end
     local onleaveLine = function(line)
         --check if the OnLeave wasn't triggered by hidding the button because the child selected has no children
@@ -275,6 +280,11 @@ function frameInspect.CreateChildrenFrame()
                     frameInspect.StartPreviewingObject(childrenFrame.currentParent)
                 end
             end)
+        end
+
+        local animationHub = line.icon.currentPlayingAnimationPreview
+        if (animationHub) then
+            animationHub:Stop()
         end
     end
 
@@ -338,7 +348,7 @@ function frameInspect.CreateChildrenFrame()
 
         animation:SetDuration(animationObject:GetDuration())
         --some animations isn't playing...
-        animationHub:Play()
+        --animationHub:Play()
         self.currentPlayingAnimationPreview = animationHub
         return animationHub
     end
