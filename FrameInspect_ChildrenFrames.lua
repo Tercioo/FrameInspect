@@ -77,6 +77,7 @@ function frameInspect.CreateChildrenFrame()
             local object = data[index]
             if (object) then
                 local line = self:GetLine(i)
+                line.childObject = object
                 local objectType = object:GetObjectType()
 
                 line.icon.texture = {0, 1, 0, 1}
@@ -93,7 +94,15 @@ function frameInspect.CreateChildrenFrame()
 
                 line.currentParent = childrenFrame.currentParent
 
-                line.hiddenText:SetShown(object.IsShown and not object:IsShown())
+                if (object.IsShown) then
+                    line.visibilityButton:SetIconForCurrentVisibility()
+                    line.visibilityButton:Show()
+                else
+                    line.visibilityButton:Hide()
+                end
+                --line.hiddenText:SetShown(object.IsShown and not object:IsShown())
+                line.hiddenText:Hide()
+
                 line.icon.texcoord = {0, 1, 0, 1}
 
                 if (line.icon.currentPlayingAnimationPreview) then
@@ -164,8 +173,6 @@ function frameInspect.CreateChildrenFrame()
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_frame]]
 
                 end
-
-                line.childObject = object
             end
         end
     end
@@ -393,6 +400,24 @@ function frameInspect.CreateChildrenFrame()
         isHiddenText:SetPoint("left", line, "right", -10, -22)
         isHiddenText.rotation = 90
         isHiddenText.alpha = 0.6
+
+        --toggle visibility button
+        local toggleVisibilityCallback = function()
+            local isShown = line.childObject:IsShown()
+            line.childObject:SetShown(not isShown)
+            line.visibilityButton:SetIconForCurrentVisibility()
+        end
+        local visibilityButton = DF:CreateButton(line, toggleVisibilityCallback, 20, 20, nil, nil, nil, nil, nil, "$parentVisibilityButton")
+        visibilityButton:SetIcon("Interface\\LFGFRAME\\BattlenetWorking1", 12, 12, "overlay", {0.2, .8, 0.2, .8}, {1, 1, 1}, 0, 0, 0, false)
+        visibilityButton:SetPoint("topright", line, "topright", 0, 0)
+        visibilityButton.SetIconForCurrentVisibility = function(self)
+            if (line.childObject:IsShown()) then
+                line.visibilityButton:SetIcon("Interface\\LFGFRAME\\BattlenetWorking1", 12, 12, "overlay", {0.2, .8, 0.2, .8}, {1, 1, 1}, 0, 0, 0, false)
+            else
+                line.visibilityButton:SetIcon("Interface\\LFGFRAME\\BattlenetWorking4", 12, 12, "overlay", {0.2, .8, 0.2, .8}, {1, 1, 1}, 0, 0, 0, false)
+            end
+        end
+        line.visibilityButton = visibilityButton
 
         --highlight texture
         local highlightTexture = DF:CreateImage(line, "white", 1, 1, "highlight", {0, 1, 0, 1}, "highlight", "$parentHighlight")
