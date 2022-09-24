@@ -486,6 +486,8 @@ local getObjectName = function(object)
                     name = "$parent." .. parentKey
                 end
             end
+        else
+            return path
         end
     end
     return name or tostring(object) or "nil"
