@@ -457,6 +457,39 @@ local canSetAsDefault = function(object, value, line, setAsDefault)
     return value
 end
 
+function frameInspect.GetNamePath(object, path)
+    local parentObject = object:GetParent()
+    if (parentObject ~= _G.UIParent) then
+        local parentKey = object:GetParentKey()
+        if (parentKey) then
+            path = parentKey .. "." .. path
+            return frameInspect.GetNamePath(parentObject, path)
+        end
+    else
+        path = (object:GetName() or "$parent") .. "." .. path
+    end
+    return path:gsub(".$", "")
+end
+
+local getObjectName = function(object)
+    local name = object:GetName()
+    if (not name) then
+        local path = frameInspect.GetNamePath(object, "")
+        if (path == "") then
+            local parentObject = object:GetParent()
+            local parentKey = object:GetParentKey()
+            if (parentKey) then
+                local parentName = parentObject:GetName()
+                if (parentName) then
+                    name = parentName .. "." .. parentKey
+                else
+                    name = "$parent." .. parentKey
+                end
+            end
+        end
+    end
+    return name or tostring(object) or "nil"
+end
 
 --to add new entry: add the information on the table below
 
@@ -477,7 +510,7 @@ local animationWithOriginFilter = {Scale = true, Rotation = true}
 
 --all information displayed in the frame info (read only table)
 frameInspect.PropertiesList = {
-    {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetName() or "nil", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, getObjectName(frame), line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "-Unknown-", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
 
