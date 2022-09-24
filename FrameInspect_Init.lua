@@ -105,7 +105,6 @@ local handleSavedVariablesFrame = CreateFrame("frame")
 handleSavedVariablesFrame:RegisterEvent("ADDON_LOADED")
 handleSavedVariablesFrame:RegisterEvent("PLAYER_LOGIN")
 handleSavedVariablesFrame:RegisterEvent("PLAYER_LOGOUT")
-
 handleSavedVariablesFrame:SetScript("OnEvent", function(self, event, ...)
     if (event == "ADDON_LOADED") then
         local thisAddonName = ...
@@ -122,6 +121,25 @@ handleSavedVariablesFrame:SetScript("OnEvent", function(self, event, ...)
 
     end
 end)
+
+--[=[ /fstack sometimes does not trigger CVAR_UPDATE update
+local handleRegularEventsFrame = CreateFrame("frame")
+handleRegularEventsFrame:RegisterEvent("CVAR_UPDATE")
+handleRegularEventsFrame:SetScript("OnEvent", function(self, event, ...)
+    if (event == "CVAR_UPDATE") then
+        frameInspect.frameStackIsEnabled = false
+        local cVarName, value = ...
+        print(cVarName, value)
+        if (value == "1") then
+            frameInspect.frameStackIsEnabled = true
+        end
+    end
+end)--]=]
+
+function frameInspect.IsFrameStackEnabled()
+    local isEnabled = GetCVar("fstack_enabled") == "1"
+    return isEnabled
+end
 
 --return a table with the addon settings
 function frameInspect.GetConfig()

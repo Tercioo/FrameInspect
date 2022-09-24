@@ -157,7 +157,7 @@ local listenKeyInputs = function(self, key)
         if (key == "F4") then
             frameInspect.StartInspectingObject(previewObject)
 
-        elseif (key == "LALT") then
+        elseif (key == "LALT" and not frameInspect.IsFrameStackEnabled()) then
             previewObject:EnableMouse(false)
             local alpha = previewObject:GetAlpha()
             local newAlpha = alpha / 2
@@ -193,6 +193,10 @@ function frameInspect.CanInspectObject(object)
     return true
 end
 
+local getFrameUnderMouse = function()
+    return GetMouseFocus()
+end
+
 --OnUpdate callback
 local onUpdateRoutine = function(self, deltaTime)
     if (frameInspect.nextOnUpdateTick > GetTime()) then
@@ -202,7 +206,28 @@ local onUpdateRoutine = function(self, deltaTime)
 
     --if not inspecting any frame, preview the object on mouse focus
     if (not frameInspect.GetInspectingObject()) then
-        local objectUnderMousePointer = GetMouseFocus()
+        local objectUnderMousePointer
+
+        local isFrameStackEnabled = frameInspect.IsFrameStackEnabled()
+        if (isFrameStackEnabled) then
+            local frameStackObject = _G.fsobj
+            if (frameStackObject) then
+                if (not frameStackObject:IsProtected()) then
+                    local frameName = frameStackObject:GetName()
+                    if (not frameName or not frameName:find("NamePlate")) then
+                        objectUnderMousePointer = frameStackObject
+                    else
+                        objectUnderMousePointer = getFrameUnderMouse()
+                    end
+                else
+                    objectUnderMousePointer = getFrameUnderMouse()
+                end
+            else
+                objectUnderMousePointer = getFrameUnderMouse()
+            end
+        else
+            objectUnderMousePointer = getFrameUnderMouse()
+        end
 
         --if there's nothing on mouse focus, clear the information shown
         if (not objectUnderMousePointer or objectUnderMousePointer == UIParent or objectUnderMousePointer == WorldFrame) then
@@ -212,9 +237,9 @@ local onUpdateRoutine = function(self, deltaTime)
             return
         end
 
-        --don't inspect our own frames
+        --don't inspect our own frames or nameplates
         local frameName = objectUnderMousePointer:GetName()
-        if (frameName and frameName:find("FrameInspect")) then
+        if (frameName and (frameName:find("FrameInspect") or frameName:find("NamePlate"))) then
             frameInspect.ClearInformationFrame()
             frameInspect.ClearChildrenFrame()
             return
@@ -240,14 +265,6 @@ local onUpdateRoutine = function(self, deltaTime)
         if (frameInspect.mouseX ~= mouseX and frameInspect.mouseY ~= mouseY) then
             frameInspect.ClearDisabledMouseFrames()
         end
-    else
-        --if the object current being inspected is hidden
-        --if (not frameInspect.GetInspectingObject():IsShown()) then
-            --frameInspect.ClearInformationFrame()
-            --frameInspect.ClearDisabledMouseFrames()
-            --frameInspect.ClearChildrenFrame()
-            --print("is hidden...")
-        --end
     end
 end
 
