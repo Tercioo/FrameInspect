@@ -328,7 +328,7 @@ local getBackdropData = function(frame, dataIndex)
         return backdrop.edgeFile or ""
 
     elseif (dataIndex == 3) then
-        return backdrop.edgeSize or ""
+        return backdrop.edgeSize or 0
 
     elseif (dataIndex == 4) then --color
         if (not frame.GetBackdrop) then
@@ -353,6 +353,11 @@ local setBackdropData = function(value, dataIndex, r, g, b, a)
     end
 
     local backdrop = frame:GetBackdrop()
+    if (not backdrop) then
+        frame:SetBackdrop({bgFile = "", edgeFile = "", edgeSize = 0})
+        backdrop = frame:GetBackdrop()
+    end
+
     local bgR, bgG, bgB, bgA = frame:GetBackdropColor()
     local borderR, borderG, borderB, borderA = frame:GetBackdropBorderColor()
 
@@ -520,23 +525,23 @@ frameInspect.PropertiesList = {
 
     {name = "Is Shown", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:IsShown(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetShown(value) end, type = "boolean", filter = notForAnimationFilter},
 
-    {name = "Width", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetWidth(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetWidth(value) end, type = "number", filter = notForAnimationFilter},
-    {name = "Height", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetHeight(), 3), line, setAsDefault) end,  funcSet = function(value) frameInspect.GetInspectingObject():SetHeight(value) end, type = "number", filter = notForAnimationFilter},
-    {name = "Scale", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetScale(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetScale(value) end, type = "number", filter = notForAnimationFilter},
-    {name = "Alpha", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetAlpha(), 3), line, setAsDefault) end,   funcSet = function(value) frameInspect.GetInspectingObject():SetAlpha(value) end, type = "number", filter = notForAnimationFilter},
+    {name = "Width", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetWidth(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetWidth(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
+    {name = "Height", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetHeight(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetHeight(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
+    {name = "Scale", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetScale(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetScale(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 0.7, clamp = {0.1, 6}},
+    {name = "Alpha", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetAlpha(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAlpha(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 0.7, clamp = {0, 1}},
     {name = "Alpha (Effective)", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetEffectiveAlpha(), 3), line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text", filter = frameFilter},
     {name = "Anchor Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 1) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 1) end, type = "anchor", filter = notForAnimationFilter},
     {name = "Anchor Frame", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 2) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 2) end, type = "text", filter = notForAnimationFilter},
     {name = "Anchor Frame Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 3) end, type = "anchor", filter = notForAnimationFilter},
-    {name = "Anchor Offset X", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 4) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 4) end, type = "number", filter = notForAnimationFilter},
-    {name = "Anchor Offset Y", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 5) end, type = "number", filter = notForAnimationFilter},
+    {name = "Anchor Offset X", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 4) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 4) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
+    {name = "Anchor Offset Y", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 5) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
     {name = "Strata", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetFrameStrata(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFrameStrata(value) end, type = "text", filter = frameFilter},
-    {name = "Level", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetFrameLevel(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFrameLevel(value) end, type = "number", filter = frameFilter},
+    {name = "Level", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetFrameLevel(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFrameLevel(value) end, type = "number", filter = frameFilter, isInteger = true, clamp = {0, 9999}},
 
     {name = "Backdrop Texture", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 1) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setBackdropData(value, 1) end, type = "text", filter = frameFilter},
     {name = "Backdrop Color", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 4) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(r, g, b, a) setBackdropData(false, 4, r, g, b, a) end, type = "color", filter = frameFilter},
     {name = "Border Texture", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 2) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setBackdropData(value, 2) end, type = "text", filter = frameFilter},
-    {name = "Border Size", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setBackdropData(value, 3) end, type = "text", filter = frameFilter},
+    {name = "Border Size", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setBackdropData(value, 3) end, type = "number", filter = frameFilter, scaleBy = 0.8},
     {name = "Border Color", funcGet =  function(frame, line, setAsDefault) local value = getBackdropData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(r, g, b, a) setBackdropData(false, 5, r, g, b, a) end, type = "color", filter = frameFilter},
 
     {name = "Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetValue(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetValue(value) end, type = "text", filter = sliderFilter},
@@ -616,15 +621,15 @@ function frameInspect.ApplyValues(line)
                     funcSet(r, g, b, a)
 
                 elseif (line.type == "boolean") then
-                    local value = line.currentValue
+                    local value =  line:GetCurrentValue()
                     funcSet(value)
 
                 else
                     local value = textEntry.text
                     local isString = value
                     local isNumber = tonumber(isString)
-                    line.currentValue = isNumber and isNumber or isString
-                    funcSet(line.currentValue)
+                    line:SetCurrentValue(isNumber and isNumber or isString)
+                    funcSet(line:GetCurrentValue())
                 end
             end
         end
@@ -769,6 +774,7 @@ function frameInspect.CreateInformationFrame()
                     line.text:SetText(lineInfo.name)
                     line.type = lineInfo.type
                     line.name = lineInfo.name
+                    line:SetLineInfo(lineInfo)
 
                     local textEntry = line.textEntry
                     local colorPicker = line.colorPicker
@@ -804,6 +810,7 @@ function frameInspect.CreateInformationFrame()
                         textEntry.text = value
                         textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
                         adjustmentSlider:Show()
+                        adjustmentSlider:SetScaleFactor(lineInfo.scaleBy)
 
                     elseif (line.type == "anchor") then
                         textEntry.text = value
@@ -818,7 +825,7 @@ function frameInspect.CreateInformationFrame()
                         textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
                     end
 
-                    line.currentValue = value
+                    line:SetCurrentValue(value)
                     textEntry:SetCursorPosition(0)
                     textEntry.funcSet = lineInfo.funcSet
                     line.funcSet = lineInfo.funcSet
@@ -863,11 +870,56 @@ function frameInspect.CreateInformationFrame()
         {value = false, label = "FALSE", onclick = function()end},
     }
 
+    local propertyLineMixin = {
+        GetLineInfo = function(self)
+            return self.lineInfo
+        end,
+
+        SetLineInfo = function(self, lineInfo)
+            self.lineInfo = lineInfo
+        end,
+
+        ClampValue = function(self, value)
+            local lineInfo = self:GetLineInfo()
+
+            local clamp = lineInfo.clamp
+            if (clamp) then
+                value = Clamp(value, unpack(clamp))
+            end
+
+            if (lineInfo.isInteger) then
+                local currentValue = self:GetCurrentValue()
+                --if the line was previously used by another type of value
+                if (type(currentValue) ~= "number") then
+                    return floor(value)
+                else
+                    if (value < currentValue) then
+                        value = floor(value)
+                    else
+                        value = ceil(value)
+                    end
+                end
+            end
+
+            return value
+        end,
+
+        SetCurrentValue = function(self, value)
+            value = self:ClampValue(value)
+            self.currentValue = value
+        end,
+
+        GetCurrentValue = function(self)
+            return self.currentValue
+        end,
+    }
+
     --create a grid of information about the frame selected
     local createPropertyLine = function(self, lineId)
         local lineHeight = frameInspect.FrameSettings.scroll_line_height
 
         local line = CreateFrame("frame", "$parentLine" .. lineId, self, "BackdropTemplate")
+        DF:Mixin(line, propertyLineMixin)
         line.lineId = lineId
 
         line:SetPoint("topleft", mainFrame, "topleft", frameInspect.FrameSettings.frame_info_x, (lineHeight * lineId * -1) + frameInspect.FrameSettings.frame_info_y)
@@ -908,11 +960,11 @@ function frameInspect.CreateInformationFrame()
                 local r, g, b, a = DF:ParseColors(line.textEntry.text)
                 if (r and g and b and a) then
                     line.colorPicker:SetColor(r, g, b, a)
-                    line.currentValue = {r, g, b, a}
+                    line:SetCurrentValue({r, g, b, a})
                 end
 
             elseif (line.type == "number") then
-                line.currentValue = tonumber(line.textEntry.text)
+                line:SetCurrentValue(tonumber(line.textEntry.text))
 
             elseif (line.type == "anchor") then
                 for i = 1, #anchorPointOptions do
@@ -920,17 +972,17 @@ function frameInspect.CreateInformationFrame()
                         line.anchorPointDropdown:Select(i, true)
                     end
                 end
-                line.currentValue = line.textEntry.text
+                line:SetCurrentValue(line.textEntry.text)
 
             elseif (line.type == "boolean") then
                 local text = line.textEntry.text
                 text = text:lower()
                 local value = text == "true" and true or false
                 line.booleanDropdown:Select(value and 1 or 2, true) --select by index as selecting 'false' trigger another thing
-                line.currentValue = value
+                line:SetCurrentValue(value)
 
             else
-                line.currentValue = line.textEntry.text
+                line:SetCurrentValue(line.textEntry.text)
             end
 
             frameInspect.ApplyValues(line)
@@ -946,7 +998,8 @@ function frameInspect.CreateInformationFrame()
         --adjustment slider for numbers
         local onSliderAdjustedValueChanged = function(scalarX, scalarY, isLiteral, thisLine)
             local line = thisLine
-            local currentValue = line.currentValue
+            local currentValue = line:GetCurrentValue()
+            local adjustmentSlider = thisLine.adjustmentSlider
 
             --if isLiteral is true the value is always a -1 or 1
             --if not literal, it's a normalized value from -1 to 1
@@ -972,12 +1025,13 @@ function frameInspect.CreateInformationFrame()
                 if (valueToAdd < 0 and valueToAdd > -0.005) then
                     valueToAdd = -0.005
                 end
+
                 currentValue = currentValue + valueToAdd
                 currentValue = DF:TruncateNumber(currentValue, 3)
             end
 
-            line.textEntry.text = currentValue
-            line.currentValue = currentValue
+            line:SetCurrentValue(currentValue)
+            line.textEntry.text = line:GetCurrentValue()
 
             --print(GetTime(), currentValue) current value not updating correctly when moving the X axis
             frameInspect.ApplyValues(line)
@@ -1019,7 +1073,7 @@ function frameInspect.CreateInformationFrame()
             end
         end
 
-        local adjustmentSlider = DF:CreateAdjustmentSlider(line, mainFrame.sliderAdjustmentCallback, {width = 80}, "$parentAdjustSlider")
+        local adjustmentSlider = DF:CreateAdjustmentSlider(line, mainFrame.sliderAdjustmentCallback, {}, "$parentAdjustSlider")
         adjustmentSlider:SetPoint("left", textEntry.widget, "right", 10, 0)
         adjustmentSlider.lineId = lineId
 
@@ -1054,7 +1108,7 @@ function frameInspect.CreateInformationFrame()
         --boolean selector
         local booleanSelectorCallback = function(_, _, value)
             textEntry.text = value and "true" or "false"
-            line.currentValue = value
+            line:SetCurrentValue(value)
             frameInspect.ApplyValues(line)
         end
         local generatedBooleanOptions = {}
