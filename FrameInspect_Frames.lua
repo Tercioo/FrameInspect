@@ -193,6 +193,22 @@ function frameInspect.CanInspectObject(object)
     return true
 end
 
+function frameInspect.IsNamePlate(frame)
+    if (frame and frame.GetName) then
+        local frameName = frame:GetName()
+        if (frameName) then
+            if (frameName:find("NamePlate")) then
+                return true
+            end
+        else
+            local frameParent = frame:GetParent()
+            if (frameParent) then
+                return frameInspect.IsNamePlate(frameParent)
+            end
+        end
+    end
+end
+
 local getFrameUnderMouse = function()
     return GetMouseFocus()
 end
@@ -270,6 +286,14 @@ end
 
 --get the first anchor point point of a frame
 local getAnchorData = function(frame, dataIndex)
+    if (frameInspect.IsNamePlate(frame)) then
+        if (dataIndex == 2) then
+            return "-this object has no points-"
+        end
+        local data = {"", {}, "", 0, 0}
+        return data[dataIndex]
+    end
+
     if (frame:GetNumPoints() == 0) then
         local data = {"", {}, "", 0, 0}
         if (dataIndex == 2) then
@@ -792,6 +816,11 @@ function frameInspect.CreateInformationFrame()
                     line.adjustmentSlider:Hide()
 
                     if (line.type == "text") then
+                        if (type(value) == "table" and line.name == "Texture") then
+                            --texture is a texture object
+                            value = value:GetTexture()
+                        end
+
                         textEntry.text = value or "nil"
                         textEntry:SetWidth(frameInspect.FrameSettings.width - frameInspect.FrameSettings.frame_info_text2_x - 30)
 
