@@ -54,9 +54,9 @@ function frameInspect.MoveInspectIndicators(frame, isChildren)
     onFocusBorder:ClearAllPoints()
     onFocusBorder:SetPoint("topleft", frame, "topleft", -2, 2)
     onFocusBorder:SetPoint("bottomright", frame, "bottomright", 2, -2)
-    onFocusBorder.Border:SetBorderThickness(2)
+    onFocusBorder.Border:SetBorderThickness(1)
     onFocusBorder.Border:SetBorderColor("green")
-    onFocusBorder.Border:SetAlpha(0.7)
+    onFocusBorder.Border:SetAlpha(0.5)
     onFocusBorder:Show()
 
     --[=[
@@ -483,6 +483,7 @@ local canSetAsDefault = function(object, value, line, setAsDefault)
         end
         frameInspect.DefaultValues[line.name] = value
     end
+
     return value
 end
 
@@ -526,11 +527,12 @@ end
 
 --Frame Texture
 local hasTextFilter = {EditBox = true, FontString = true}
-local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true}
+local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, ScrollFrame = true}
 local textureFilter = {Texture = true, MaskTexture = true}
+local fontStringFilter = {FontString = true}
 local buttonFilter = {Button = true}
 local sliderFilter = {Slider = true}
-local notForAnimationFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true}
+local notForAnimationFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true, ScrollFrame = true, FontString = true}
 local animationGroupFilter = {AnimationGroup = true}
 local animationFilter = {Rotation = true, Alpha = true, Translation = true, Scale = true}
 local animationAlphaFilter = {Alpha = true}
@@ -572,10 +574,16 @@ frameInspect.PropertiesList = {
     {name = "Min Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(1, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(value, select(2, frameInspect.GetInspectingObject():GetMinMaxValues())) end, type = "text", filter = sliderFilter},
     {name = "Max Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(2, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(select(1, frameInspect.GetInspectingObject():GetMinMaxValues()), value) end, type = "text", filter = sliderFilter},
 
-    {name = "Text", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = hasTextFilter},
+    {name = "Text", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = hasTextFilter},
+    {name = "Font Size", funcGet = function(frame, line, setAsDefault) local _, fontHeight = frame:GetFont(); return canSetAsDefault(frame, fontHeight, line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(fontName, value, fontFlags) end, type = "number", filter = hasTextFilter},
+    {name = "Font Name", funcGet = function(frame, line, setAsDefault) local fontName = frame:GetFont(); return canSetAsDefault(frame, fontName, line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(value, fontHeight, fontFlags) end, type = "text", filter = hasTextFilter},
+    {name = "Font Flags", funcGet = function(frame, line, setAsDefault) local _, _, fontFlags = frame:GetFont(); fontFlags = fontFlags or "NONE" return canSetAsDefault(frame, fontFlags, line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(fontName, fontHeight, value) end, type = "text", filter = hasTextFilter},
+    {name = "Font Color", funcGet =  function(frame, line, setAsDefault) local r, g, b, a = frame:GetTextColor() return canSetAsDefault(frame, {r, g, b, a}, line, setAsDefault) end, funcSet = function(r, g, b, a) frameInspect.GetInspectingObject():SetTextColor(r, g, b, a) end, type = "color", filter = hasTextFilter},
 
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
+    {name = "Draw Layer", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDrawLayer(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDrawLayer(value) end, type = "text", filter = textureFilter},
+    {name = "Sub Level", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetDrawLayer()), line, setAsDefault) end, funcSet = function(value) local drawLayer = frameInspect.GetInspectingObject():GetDrawLayer(); frameInspect.GetInspectingObject():SetDrawLayer(drawLayer, value) end, type = "text", filter = textureFilter},
     {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "left"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "right"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "top"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
