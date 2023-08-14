@@ -582,12 +582,13 @@ frameInspect.PropertiesList = {
 
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
+    {name = "Desaturated", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:IsDesaturated() and "true" or "false", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDesaturated((value == "true" and true) or false) end, type = "text", filter = textureFilter},
     {name = "Draw Layer", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDrawLayer(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDrawLayer(value) end, type = "text", filter = textureFilter},
     {name = "Sub Level", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetDrawLayer()), line, setAsDefault) end, funcSet = function(value) local drawLayer = frameInspect.GetInspectingObject():GetDrawLayer(); frameInspect.GetInspectingObject():SetDrawLayer(drawLayer, value) end, type = "text", filter = textureFilter},
-    {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "left"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
-    {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "right"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
-    {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "top"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
-    {name = "TexCoord Bottom", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, getTexCoord(texture, "bottom"), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "bottom", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(1, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(5, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
+    {name = "TexCoord Bottom", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(4, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "bottom", value) end, type = "number", filter = textureFilter},
 
     --animation group
     {name = "Looping", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:GetLooping(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetLooping(value) end, type = "text", filter = animationGroupFilter},
@@ -728,7 +729,7 @@ function frameInspect.CreateInformationFrame()
 
     frameInspect.lockOnFrameLabel = DF:CreateLabel(mainFrame, "PRESS F4 TO LOCK/UNLOCK ON FRAME")
     frameInspect.lockOnFrameLabel.color = "white"
-    frameInspect.lockOnFrameLabel.fontsize = 12
+    frameInspect.lockOnFrameLabel.fontsize = 18
     frameInspect.lockOnFrameLabel:SetPoint("center", 0, 0)
 
     mainFrame:SetScript("OnKeyDown", listenKeyInputs)

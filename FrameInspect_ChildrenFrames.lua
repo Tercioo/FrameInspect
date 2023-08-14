@@ -57,7 +57,7 @@ function frameInspect.CreateChildrenFrame()
     childrenFrame:SetBackdropColor(mainFrame:GetBackdropColor())
     childrenFrame:SetBackdropBorderColor(mainFrame:GetBackdropBorderColor())
 
-    local rightClickHelpText = DF:CreateLabel(childrenFrame, "right click: back to parent", 11, "white", "GameFontNormal")
+    local rightClickHelpText = DF:CreateLabel(childrenFrame, "right click: back to parent", 14, "white", "GameFontNormal")
     rightClickHelpText:SetPoint("bottom", childrenFrame, "bottom", 0, 5)
 
     childrenFrame:SetScript("OnClick", function(self, mouseButton)
@@ -110,7 +110,7 @@ function frameInspect.CreateChildrenFrame()
                     line.icon.currentPlayingAnimationPreview = nil
                 end
 
-                if (objectType == "Texture") then
+                if (objectType == "Texture" or objectType == "MaskTexture") then
                     local setFromAtlas = false
                     local atlasName = object:GetAtlas()
                     if (atlasName) then
