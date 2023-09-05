@@ -1,6 +1,8 @@
 local addonName, frameInspect = ...
 local _
 
+--GetMouseFocus()
+
 --load Details! Framework
 local DF = _G ["DetailsFramework"]
 if (not DF) then
@@ -528,10 +530,12 @@ end
 --Frame Texture
 local hasTextFilter = {EditBox = true, FontString = true}
 local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, ScrollFrame = true}
+local frameAndRegionFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, ScrollFrame = true, FontString = true, Texture = true}
 local textureFilter = {Texture = true, MaskTexture = true}
 local fontStringFilter = {FontString = true}
 local buttonFilter = {Button = true}
 local sliderFilter = {Slider = true}
+local layeredRegion = {Texture = true, FontString = true}
 local notForAnimationFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true, ScrollFrame = true, FontString = true}
 local animationGroupFilter = {AnimationGroup = true}
 local animationFilter = {Rotation = true, Alpha = true, Translation = true, Scale = true}
@@ -583,7 +587,7 @@ frameInspect.PropertiesList = {
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
     {name = "Desaturated", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:IsDesaturated() and "true" or "false", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDesaturated((value == "true" and true) or false) end, type = "text", filter = textureFilter},
-    {name = "Draw Layer", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDrawLayer(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDrawLayer(value) end, type = "text", filter = textureFilter},
+    {name = "Draw Layer", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDrawLayer(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDrawLayer(value) end, type = "text", filter = layeredRegion},
     {name = "Sub Level", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetDrawLayer()), line, setAsDefault) end, funcSet = function(value) local drawLayer = frameInspect.GetInspectingObject():GetDrawLayer(); frameInspect.GetInspectingObject():SetDrawLayer(drawLayer, value) end, type = "text", filter = textureFilter},
     {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(1, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(5, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},

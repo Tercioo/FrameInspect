@@ -1,6 +1,6 @@
 
 
-local dversion = 457
+local dversion = 463
 local major, minor = "DetailsFramework-1.0", dversion
 local DF, oldminor = LibStub:NewLibrary(major, minor)
 
@@ -233,8 +233,8 @@ end
 
 ---return the role of the unit, this is safe to use for all versions of wow
 ---@param unitId string
----@param bUseSupport boolean
----@param specId number
+---@param bUseSupport boolean?
+---@param specId number?
 ---@return string
 function DF.UnitGroupRolesAssigned(unitId, bUseSupport, specId)
 	if (not DF.IsTimewalkWoW()) then --Was function exist check. TBC has function, returns NONE. -Flamanis 5/16/2022
@@ -640,12 +640,83 @@ function DF.table.deploy(t1, t2)
 	return t1
 end
 
+local function tableToString(t, resultString, deep, seenTables)
+    resultString = resultString or ""
+    deep = deep or 0
+    seenTables = seenTables or {}
+
+    if seenTables[t] then
+        resultString = resultString .. "--CIRCULAR REFERENCE\n"
+        return resultString
+    end
+
+    local space = string.rep("   ", deep)
+
+    seenTables[t] = true
+
+    for key, value in pairs(t) do
+		local valueType = type(value)
+
+		if (type(key) == "function") then
+			key = "#function#"
+		elseif (type(key) == "table") then
+			key = "#table#"
+		end
+
+		if (type(key) ~= "string" and type(key) ~= "number") then
+			key = "unknown?"
+		end
+
+        if (valueType == "table") then
+			local sUIObjectType = value.GetObjectType and value:GetObjectType()
+			if (sUIObjectType) then
+				if (type(key) == "number") then
+					resultString = resultString .. space .. "[" .. key .. "] = |cFFa9ffa9 " .. sUIObjectType .. " {|r\n"
+				else
+					resultString = resultString .. space .. "[\"" .. key .. "\"] = |cFFa9ffa9 " .. sUIObjectType .. " {|r\n"
+				end
+			else
+				if (type(key) == "number") then
+					resultString = resultString .. space .. "[" .. key .. "] = |cFFa9ffa9 {|r\n"
+				else
+					resultString = resultString .. space .. "[\"" .. key .. "\"] = |cFFa9ffa9 {|r\n"
+				end
+			end
+            resultString = resultString .. tableToString(value, nil, deep + 1, seenTables)
+            resultString = resultString .. space .. "|cFFa9ffa9},|r\n"
+
+		elseif (valueType == "string") then
+			resultString = resultString .. space .. "[\"" .. key .. "\"] = \"|cFFfff1c1" .. value .. "|r\",\n"
+
+		elseif (valueType == "number") then
+			resultString = resultString .. space .. "[\"" .. key .. "\"] = |cFFffc1f4" .. value .. "|r,\n"
+
+		elseif (valueType == "function") then
+			resultString = resultString .. space .. "[\"" .. key .. "\"] = function()end,\n"
+
+		elseif (valueType == "boolean") then
+			resultString = resultString .. space .. "[\"" .. key .. "\"] = |cFF99d0ff" .. (value and "true" or "false") .. "|r,\n"
+		end
+    end
+
+    return resultString
+end
+
+local function tableToStringSafe(t)
+    local seenTables = {}
+    return tableToString(t, nil, 0, seenTables)
+end
+
+
 ---get the contends of table 't' and return it as a string
 ---@param t table
 ---@param resultString string
 ---@param deep integer
 ---@return string
 function DF.table.dump(t, resultString, deep)
+
+	if true then return tableToStringSafe(t) end
+
 	resultString = resultString or ""
 	deep = deep or 0
 	local space = ""
@@ -1430,6 +1501,11 @@ function DF:CheckPoints(point1, point2, point3, point4, point5, object)
 	return point1 or "topleft", point2, point3 or "topleft", point4 or 0, point5 or 0
 end
 
+---@class df_anchor : table
+---@field side number 1-8: topleft to top (clockwise); 9: center; 10-13: inside left right top bottom; 14-17: inside topleft, bottomleft bottomright topright
+---@field x number
+---@field y number
+
 local anchoringFunctions = {
 	function(frame, anchorTo, offSetX, offSetY) --1 TOP LEFT
 		frame:ClearAllPoints()
@@ -1476,30 +1552,54 @@ local anchoringFunctions = {
 		frame:SetPoint("center", anchorTo, "center", offSetX, offSetY)
 	end,
 
-	function(frame, anchorTo, offSetX, offSetY) --10
+	function(frame, anchorTo, offSetX, offSetY) --10 INSIDE LEFT
 		frame:ClearAllPoints()
 		frame:SetPoint("left", anchorTo, "left", offSetX, offSetY)
 	end,
 
-	function(frame, anchorTo, offSetX, offSetY) --11
+	function(frame, anchorTo, offSetX, offSetY) --11 INSIDE RIGHT
 		frame:ClearAllPoints()
 		frame:SetPoint("right", anchorTo, "right", offSetX, offSetY)
 	end,
 
-	function(frame, anchorTo, offSetX, offSetY) --12
+	function(frame, anchorTo, offSetX, offSetY) --12 INSIDE TOP
 		frame:ClearAllPoints()
 		frame:SetPoint("top", anchorTo, "top", offSetX, offSetY)
 	end,
 
-	function(frame, anchorTo, offSetX, offSetY) --13
+	function(frame, anchorTo, offSetX, offSetY) --13 INSIDE BOTTOM
 		frame:ClearAllPoints()
 		frame:SetPoint("bottom", anchorTo, "bottom", offSetX, offSetY)
-	end
+	end,
+
+	function(frame, anchorTo, offSetX, offSetY) --14 INSIDE TOPLEFT to TOPLEFT
+		frame:ClearAllPoints()
+		frame:SetPoint("topleft", anchorTo, "topleft", offSetX, offSetY)
+	end,
+
+	function(frame, anchorTo, offSetX, offSetY) --15 INSIDE BOTTOMLEFT to BOTTOMLEFT
+		frame:ClearAllPoints()
+		frame:SetPoint("bottomleft", anchorTo, "bottomleft", offSetX, offSetY)
+	end,
+
+	function(frame, anchorTo, offSetX, offSetY) --16 INSIDE BOTTOMRIGHT to BOTTOMRIGHT
+		frame:ClearAllPoints()
+		frame:SetPoint("bottomright", anchorTo, "bottomright", offSetX, offSetY)
+	end,
+
+	function(frame, anchorTo, offSetX, offSetY) --17 INSIDE TOPRIGHT to TOPRIGHT
+		frame:ClearAllPoints()
+		frame:SetPoint("topright", anchorTo, "topright", offSetX, offSetY)
+	end,
 }
 
-function DF:SetAnchor(widget, config, anchorTo)
+---set the anchor point using a df_anchor table
+---@param widget uiobject
+---@param anchorTable df_anchor
+---@param anchorTo uiobject
+function DF:SetAnchor(widget, anchorTable, anchorTo)
 	anchorTo = anchorTo or widget:GetParent()
-	anchoringFunctions[config.side](widget, anchorTo, config.x, config.y)
+	anchoringFunctions[anchorTable.side](widget, anchorTo, anchorTable.x, anchorTable.y)
 end
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2691,6 +2791,7 @@ end
 
 				elseif (widgetTable.type == "textentry") then
 					local textentry = DF:CreateTextEntry(parent, widgetTable.func or widgetTable.set, 120, 18, nil, "$parentWidget" .. index, nil, buttonTemplate)
+					textentry.align = widgetTable.align or "left"
 
 					local descPhraseId = getDescripttionPhraseID(widgetTable, languageAddonId, languageTable)
 					DetailsFramework.Language.RegisterTableKeyWithDefault(languageAddonId, textentry, "have_tooltip", descPhraseId, widgetTable.desc)
@@ -3927,7 +4028,7 @@ function DF:CreateGlowOverlay (parent, antsColor, glowColor)
 	glowFrame.SetColor = glow_overlay_setcolor
 
 	glowFrame:SetColor(antsColor, glowColor)
-	
+
 	glowFrame:Hide()
 
 	parent.overlay = glowFrame
@@ -3950,7 +4051,7 @@ function DF:CreateGlowOverlay (parent, antsColor, glowColor)
 		--glowFrame.ProcStartFlipbook:SetSize(frameWidth * scale, frameHeight * scale)
 		glowFrame.ProcStartFlipbook:SetPoint("TOPLEFT", glowFrame, "TOPLEFT", -frameWidth * scale, frameHeight * scale)
 		glowFrame.ProcStartFlipbook:SetPoint("BOTTOMRIGHT", glowFrame, "BOTTOMRIGHT", frameWidth * scale, -frameHeight * scale)
-	end 
+	end
 	glowFrame:EnableMouse(false)
 	return glowFrame
 end
@@ -4557,19 +4658,22 @@ end
 ---@return any
 function DF:Dispatch(func, ...)
 	if (type(func) ~= "function") then
-		return dispatch_error (_, "DF:Dispatch expect a function as parameter 1.")
+		return dispatch_error(_, "DetailsFramework:Dispatch(func) expect a function as parameter 1.")
 	end
+	return select(2, xpcall(func, geterrorhandler(), ...))
 
-	local dispatchResult = {xpcall(func, geterrorhandler(), ...)}
-	local okay = dispatchResult[1]
+	--[=[
+		local dispatchResult = {xpcall(func, geterrorhandler(), ...)}
+		local okay = dispatchResult[1]
 
-	if (not okay) then
-		return false
-	end
+		if (not okay) then
+			return false
+		end
 
-	tremove(dispatchResult, 1)
+		tremove(dispatchResult, 1)
 
-	return unpack(dispatchResult)
+		return unpack(dispatchResult)
+	--]=]
 end
 
 --[=[

@@ -1041,7 +1041,10 @@ detailsFramework.StatusBarFunctions = {
 
 	SetDesaturated = function(self, bIsDesaturated)
 		self.barTexture:SetDesaturated(bIsDesaturated)
-		print("SetDesaturated", bIsDesaturated, self.barTexture:IsDesaturated())
+	end,
+
+	SetDesaturation = function(self, desaturationAmount)
+		self.barTexture:SetDesaturation(desaturationAmount)
 	end,
 
 	IsDesaturated = function(self)
@@ -1066,6 +1069,7 @@ detailsFramework.StatusBarFunctions = {
 	end,
 
 	SetTexCoord = function(self, ...)
+		local left, right, top, bottom = ...
 		return self.barTexture:SetTexCoord(...)
 	end,
 
