@@ -189,6 +189,39 @@ function frameInspect.CreateChildrenFrame()
         end
     end)
 
+    local allLinesCreated = {}
+    local refreshTextures = function()
+        if (childrenScrollBox:IsShown()) then
+            for i = 1, frameInspect.FrameSettings.children_scroll_line_amount do
+                local thisLine = allLinesCreated[i]
+                local object = thisLine.childObject
+                if (object) then
+                    local objectType = object:GetObjectType()
+                    if (objectType and object:IsShown() and objectType == "Texture") then
+                        local setFromAtlas = false
+                        local atlasName = object:GetAtlas()
+                        if (atlasName) then
+                            local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+                            if (atlasInfo) then
+                                thisLine.icon:SetAtlas(atlasName)
+                                thisLine.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                setFromAtlas = true
+                            end
+                        end
+
+                        if (not setFromAtlas) then
+                            thisLine.icon.texture = object:GetTexture()
+                            thisLine.icon:SetTexCoord(object:GetTexCoord())
+                            thisLine.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    C_Timer.NewTicker(0.2, refreshTextures)
+
     local ignoredObjectTypes = {
         --["AnimationGroup"] = true,
         --["Animation"] = true,
@@ -370,6 +403,8 @@ function frameInspect.CreateChildrenFrame()
         line:RegisterForClicks("LeftButtonDown", "RightButtonDown")
         line:Hide()
         line.lineId = lineId
+
+        allLinesCreated[#allLinesCreated+1] = line
 
         line:SetPoint("topleft", childrenFrame, "topleft", frameInspect.FrameSettings.frame_info_x, (lineHeight * (lineId-1) * -1) -2)
         line:SetSize(frameInspect.FrameSettings.children_button_width, lineHeight)
