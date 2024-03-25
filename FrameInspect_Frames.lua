@@ -525,6 +525,10 @@ local getObjectName = function(object)
     return name or tostring(object) or "nil"
 end
 
+local getParentKeyPath = function(object)
+    return DF:GetParentNamePath(object)
+end
+
 --to add new entry: add the information on the table below
 
 --Frame Texture
@@ -550,6 +554,7 @@ frameInspect.PropertiesList = {
     {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, getObjectName(frame), line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "-Unknown-", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
+    {name = "Parent Path", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, getParentKeyPath(frame) or "", line, setAsDefault) end, funcSet = function(value) --[[to be defined]] end, type = "text"},
 
     {name = "OnClick()", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
 

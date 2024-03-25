@@ -197,7 +197,7 @@ function frameInspect.CreateChildrenFrame()
                 local object = thisLine.childObject
                 if (object) then
                     local objectType = object:GetObjectType()
-                    if (objectType and object:IsShown() and objectType == "Texture") then
+                    if (objectType and object.IsShown and object:IsShown() and objectType == "Texture") then
                         local setFromAtlas = false
                         local atlasName = object:GetAtlas()
                         if (atlasName) then
