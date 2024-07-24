@@ -1,14 +1,17 @@
 local addonName, frameInspect = ...
 local _
 
---GetMouseFocus()
-
 --load Details! Framework
+---@type detailsframework
 local DF = _G ["DetailsFramework"]
 if (not DF) then
     print ("|cFFFFAA00RuntimeEditor: framework not found, if you just installed or updated the addon, please restart your client.|r")
     return
 end
+
+local currentDepth = 1
+local mouseXPosition = 0
+local mouseYPosition = 0
 
 --get templates
 local options_dropdown_template = DF:GetTemplate ("dropdown", "OPTIONS_DROPDOWN_TEMPLATE")
@@ -160,19 +163,23 @@ local listenKeyInputs = function(self, key)
             frameInspect.StartInspectingObject(previewObject)
 
         elseif (key == "LALT" and not frameInspect.IsFrameStackEnabled()) then
-            previewObject:EnableMouse(false)
-            local alpha = previewObject:GetAlpha()
-            local newAlpha = alpha / 2
-            previewObject:SetAlpha(newAlpha)
+            if (not GetMouseFoci()) then
+                previewObject:EnableMouse(false)
+                local alpha = previewObject:GetAlpha()
+                local newAlpha = alpha / 2
+                previewObject:SetAlpha(newAlpha)
 
-            currentMouseDisabledFrames[#currentMouseDisabledFrames+1] = {frame = previewObject, originalAlpha = alpha}
+                currentMouseDisabledFrames[#currentMouseDisabledFrames+1] = {frame = previewObject, originalAlpha = alpha}
 
-            --save mouse position to reset this when the mouse moves
-            local mouseX, mouseY = GetCursorPosition()
-            frameInspect.mouseX = mouseX
-            frameInspect.mouseY = mouseY
+                --save mouse position to reset this when the mouse moves
+                local mouseX, mouseY = GetCursorPosition()
+                frameInspect.mouseX = mouseX
+                frameInspect.mouseY = mouseY
 
-            frameInspect.nextOnUpdateTick = GetTime() + 0.1
+                frameInspect.nextOnUpdateTick = GetTime() + 0.1
+            else
+                currentDepth = currentDepth + 1
+            end
         end
     end
 end
@@ -211,8 +218,18 @@ function frameInspect.IsNamePlate(frame)
     end
 end
 
-local getFrameUnderMouse = function()
-    return GetMouseFocus()
+local getFrameUnderMouse = function(depth)
+    --in world of warcraft the war within, the function GetMouseFocus() is not available
+    --GetMouseFoci is replacing GetMouseFocus, it's a function that returns all frames under the mouse
+    if (not GetMouseFoci) then
+        return GetMouseFocus()
+    else
+        depth = depth or 1
+        ---@type uiobject[]
+        local uiObjects = GetMouseFoci()
+        --the first index is the object under the mouse
+        return uiObjects and uiObjects[depth]
+    end
 end
 
 --OnUpdate callback
@@ -221,6 +238,16 @@ local onUpdateRoutine = function(self, deltaTime)
         return
     end
     frameInspect.nextOnUpdateTick = GetTime() + 0.1
+
+    local mouseX, mouseY = GetCursorPosition()
+    --if the mouse moved while cycling among frames pressing ALT, reset the cycle
+    if (frameInspect.mouseX ~= mouseX and frameInspect.mouseY ~= mouseY) then
+        frameInspect.ClearDisabledMouseFrames()
+        currentDepth = 1
+    end
+
+    frameInspect.mouseX = mouseX
+    frameInspect.mouseY = mouseY
 
     --if not inspecting any frame, preview the object on mouse focus
     if (not frameInspect.GetInspectingObject()) then
@@ -235,16 +262,16 @@ local onUpdateRoutine = function(self, deltaTime)
                     if (not frameName or not frameName:find("NamePlate")) then
                         objectUnderMousePointer = frameStackObject
                     else
-                        objectUnderMousePointer = getFrameUnderMouse()
+                        objectUnderMousePointer = getFrameUnderMouse(currentDepth)
                     end
                 else
-                    objectUnderMousePointer = getFrameUnderMouse()
+                    objectUnderMousePointer = getFrameUnderMouse(currentDepth)
                 end
             else
-                objectUnderMousePointer = getFrameUnderMouse()
+                objectUnderMousePointer = getFrameUnderMouse(currentDepth)
             end
         else
-            objectUnderMousePointer = getFrameUnderMouse()
+            objectUnderMousePointer = getFrameUnderMouse(currentDepth)
         end
 
         --if there's nothing on mouse focus, clear the information shown
@@ -276,12 +303,6 @@ local onUpdateRoutine = function(self, deltaTime)
                 frameInspect.ClearChildrenFrame()
                 return
             end
-        end
-
-        --if the mouse moved while cycling among frames pressing ALT, reset the cycle
-        local mouseX, mouseY = GetCursorPosition()
-        if (frameInspect.mouseX ~= mouseX and frameInspect.mouseY ~= mouseY) then
-            frameInspect.ClearDisabledMouseFrames()
         end
     end
 end
