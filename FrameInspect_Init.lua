@@ -62,6 +62,21 @@ DetailsFramework:InstallTemplate("dropdown", "FRAMEINSPECT_DISABLED_TEXTFIELD", 
 	backdropcolor = {.3, .3, .3, .8},
 }, "OPTIONS_DROPDOWN_TEMPLATE")
 
+DF:InstallTemplate("dropdown", "FRAMEINSPECT_MEMBERS_TEXTFIELD", {
+	backdrop = {
+		edgeFile = [[Interface\Buttons\WHITE8X8]],
+		edgeSize = 1,
+		bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
+		tileSize = 64,
+		tile = true
+	},
+
+	backdropcolor = {0, 0, 0, .2},
+	onentercolor = {0, 0, 0, .4},
+	backdropbordercolor = {0, 0, 0, 0.2},
+	onenterbordercolor = {0, 0, 0, 0.3},
+})
+
 function frameInspect.OnInit()
     DF:Embed(frameInspect)
 end

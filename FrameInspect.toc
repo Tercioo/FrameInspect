@@ -12,4 +12,5 @@ libs\libs.xml
 
 FrameInspect_Init.lua
 FrameInspect_ChildrenFrames.lua
+FrameInspect_MembersFrames.lua
 FrameInspect_Frames.lua

@@ -803,6 +803,7 @@ function frameInspect.CreateInformationFrame()
 
     --create the frame which show the children of the frame being inspected
     frameInspect.CreateChildrenFrame()
+    frameInspect.CreateMembersFrame()
 
     local refreshPropertiesLinesScroll = function(self, data, offset, totalLines)
         --local data = frameInspect.FrameInfoLines
@@ -1220,6 +1221,7 @@ function frameInspect.CreateInformationFrame()
     end)
 
     frameInspect.bHasCreatedScreenPanel = true
+    frameInspect.ShowWidgetsFrame()
 end
 
 --refresh the information shown about the object on preview or inspect
@@ -1272,4 +1274,35 @@ function frameInspect.ClearInformationFrame()
     onFocusText:SetText("F4: Inspect")
     hideOnFocusTexture()
     wipe(frameInspect.DefaultValues)
+end
+
+---@alias tabshowtype "widgets" | "members"
+---@type tabshowtype
+frameInspect.tabShown = "widgets"
+
+function frameInspect.ShowWidgetsFrame()
+    local mainFrame = frameInspect.MainFrame
+    local childrenScrollBox = mainFrame.childrenScrollBox
+    local membersScrollBox = mainFrame.membersScrollBox
+    childrenScrollBox:Show()
+    membersScrollBox:Hide()
+    frameInspect.tabShown = "widgets"
+    mainFrame.widgetsTab:SetSelected(true)
+    mainFrame.widgetsTab.Text:SetAlpha(1)
+    mainFrame.membersTab:SetSelected(false)
+    mainFrame.membersTab.Text:SetAlpha(0.5)
+end
+
+function frameInspect.ShowMembersFrame()
+    local mainFrame = frameInspect.MainFrame
+    local childrenScrollBox = mainFrame.childrenScrollBox
+    local membersScrollBox = mainFrame.membersScrollBox
+    childrenScrollBox:Hide()
+    membersScrollBox:Show()
+    membersScrollBox.RefreshChildren(frameInspect.GetInspectingObject())
+    frameInspect.tabShown = "members"
+    mainFrame.widgetsTab:SetSelected(false)
+    mainFrame.widgetsTab.Text:SetAlpha(0.5)
+    mainFrame.membersTab:SetSelected(true)
+    mainFrame.membersTab.Text:SetAlpha(1)
 end

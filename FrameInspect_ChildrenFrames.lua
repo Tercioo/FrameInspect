@@ -2,11 +2,16 @@ local addonName, frameInspect = ...
 local _
 
 --load Details! Framework
+---@type detailsframework
 local DF = _G ["DetailsFramework"]
 if (not DF) then
     print ("|cFFFFAA00RuntimeEditor: framework not found, if you just installed or updated the addon, please restart your client.|r")
     return
 end
+
+--the childrenScrollBox is the scrollbox showing widgets of the frame being inspected: frame, fontstrings, textures, animations, etc...
+--childrenScrollBox could be called widgetsScrollBox
+--the membersScrollBox is the scrollbox showing the members of the frame being inspected: variables, functions, etc...
 
 local CONST_MEMBER_NAME_COLOR = "orange"
 
@@ -56,6 +61,25 @@ function frameInspect.CreateChildrenFrame()
     childrenFrame:SetBackdrop(mainFrame:GetBackdrop())
     childrenFrame:SetBackdropColor(mainFrame:GetBackdropColor())
     childrenFrame:SetBackdropBorderColor(mainFrame:GetBackdropBorderColor())
+    frameInspect.ChildrenFrame = childrenFrame
+
+    local widgetsTab = DF:CreateTabButton(mainFrame, "$parentWidgetsTab")
+    widgetsTab:SetPoint("bottomleft", childrenFrame, "topleft", 0, -1)
+    widgetsTab:SetSize(80, 20)
+    widgetsTab:SetText("Widgets")
+    widgetsTab:SetSelected(true)
+    widgetsTab:SetScript("OnClick", function()
+        frameInspect.ShowWidgetsFrame()
+    end)
+    mainFrame.widgetsTab = widgetsTab
+
+    widgetsTab:SetBackdrop({bgFile = [[Interface\Tooltips\UI-Tooltip-Background]], tileSize = 64, tile = true, insets = {left = 1, right = 1, top = 1, bottom = 1}})
+    widgetsTab:SetBackdropColor(0.1, 0.1, 0.1, 1)
+
+    widgetsTab.LeftTexture:SetVertexColor(0.1, 0.1, 0.1)
+    widgetsTab.MiddleTexture:SetVertexColor(0.1, 0.1, 0.1)
+    widgetsTab.RightTexture:SetVertexColor(0.1, 0.1, 0.1)
+    widgetsTab.SelectedTexture:SetVertexColor(1, 1, 1, 0.5)
 
     local rightClickHelpText = DF:CreateLabel(childrenFrame, "right click: back to parent", 14, "white", "GameFontNormal")
     rightClickHelpText:SetPoint("bottom", childrenFrame, "bottom", 0, 5)
@@ -188,6 +212,8 @@ function frameInspect.CreateChildrenFrame()
             frameInspect.BackToParent()
         end
     end)
+
+    childrenScrollBox:Hide()
 
     local allLinesCreated = {}
     local refreshTextures = function()
