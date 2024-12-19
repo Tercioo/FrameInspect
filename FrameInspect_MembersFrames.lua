@@ -78,10 +78,13 @@ function frameInspect.CreateMembersFrame()
                 local line = self:GetLine(i)
                 line.childObject = memberTable
 
+                line.playButton:Hide()
+
                 if (memberTable.valueType == "table") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_table.tga]], nil, nil, "TRILINEAR")
                     line.memberName.text = memberTable.key
                     line.valueText.text = "table"
+                    line.playButton:Show()
 
                 elseif (memberTable.valueType == "boolean") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_bool.tga]], nil, nil, "TRILINEAR")
@@ -102,6 +105,7 @@ function frameInspect.CreateMembersFrame()
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_function.tga]], nil, nil, "TRILINEAR")
                     line.memberName.text = memberTable.key
                     line.valueText.text = "function"
+                    line.playButton:Show()
                 end
 
                 line.icon.texcoord = {0, 1, 0, 1}
@@ -127,28 +131,56 @@ function frameInspect.CreateMembersFrame()
         childrenScrollBox.frameUnderInspection = object
 
         if (object) then
-            local members = {}
+            local members = {
+                functions = {},
+                tables = {},
+                strings = {},
+                numbers = {},
+                booleans = {}
+            }
 
             for key, value in pairs (object) do
                 local valueType = type(value)
                 if (valueType == "table") then
                     if (not value.GetObjectType) then
-                        DF.table.addunique(members, {key = key, value = value, valueType = valueType, priority = 2})
+                        DF.table.addunique(members.tables, {key = key, value = value, valueType = valueType, priority = 2})
                     end
 
                 elseif (valueType == "function" or valueType == "number" or valueType == "string" or valueType == "boolean") then
                     local priority = (valueType == "function" and 1) or (valueType == "string" and 3) or (valueType == "number" and 4) or (valueType == "boolean" and 5)
-                    DF.table.addunique(members, {key = key, value = value, valueType = valueType, priority = priority})
+                    if (valueType == "function") then
+                        DF.table.addunique(members.functions, {key = key, value = value, valueType = valueType, priority = priority})
+                    elseif (valueType == "string") then
+                        DF.table.addunique(members.strings, {key = key, value = value, valueType = valueType, priority = priority})
+                    elseif (valueType == "number") then
+                        DF.table.addunique(members.numbers, {key = key, value = value, valueType = valueType, priority = priority})
+                    elseif (valueType == "boolean") then
+                        DF.table.addunique(members.booleans, {key = key, value = value, valueType = valueType, priority = priority})
+                    end
+
+                    --DF.table.addunique(members, {key = key, value = value, valueType = valueType, priority = priority})
                 end
             end
 
             childrenFrame.currentParent = object
 
-            table.sort(members, function(a, b)
-                return a.priority > b.priority
-            end)
+            for typeName, content in pairs (members) do
+                table.sort(content, function(a, b)
+                    return a.key < b.key
+                end)
+            end
 
-            childrenScrollBox:SetData(members)
+            local data = {}
+
+            local toDeploy = {members.functions, members.tables,   members.strings, members.numbers, members.booleans}
+            for i = #toDeploy, 1, -1 do
+                local content = toDeploy[i]
+                for j = 1, #content do
+                    table.insert(data, content[j])
+                end
+            end
+
+            childrenScrollBox:SetData(data)
             childrenScrollBox:Refresh()
         else
             --no object is under inspection, clear the children scroll
@@ -207,6 +239,35 @@ function frameInspect.CreateMembersFrame()
         local highlightTexture = DF:CreateImage(line, "white", 1, 1, "highlight", {0, 1, 0, 1}, "highlight", "$parentHighlight")
         highlightTexture:SetAllPoints()
         highlightTexture.alpha = 0.1
+
+        --create a play button at the right side of the line which when clicked will run the function
+        local playButton = DF:CreateButton(line, function()
+            local childObject = line.childObject
+            if (childObject) then
+                if (childObject.valueType == "function") then
+                    local result = {pcall(childrenScrollBox.frameUnderInspection[memberNameTextEntry.text], childrenScrollBox.frameUnderInspection)}
+                    if (result[1]) then
+                        table.remove(result, 1)
+                        local result1 = result[1]
+                        if (type(result1) == "table") then
+                            if (dumpt) then
+                                dumpt(result1)
+                            end
+                        end
+                        print("|cFF00FF00Okay.|r", unpack(result))
+                    else
+                        print("|cFFFF0000Error:|r", result[2])
+                    end
+                elseif (childObject.valueType == "table") then
+                    dumpt(childrenScrollBox.frameUnderInspection[memberNameTextEntry.text])
+                end
+            end
+        end, 24, 24, "", "$parentPlayButton")
+        playButton:SetPoint("right", line, "right", 10, 0)
+        playButton:SetIcon([[Interface\BUTTONS\UI-SpellbookIcon-NextPage-Up]])
+        playButton:SetFrameLevel(line:GetFrameLevel()+2)
+
+        line.playButton = playButton
 
         return line
     end
