@@ -1,4 +1,4 @@
-## Interface: 110105
+## Interface: 110107
 ## Title: Frame Inspect
 ## Notes: An addon by Terciob, useful to inspect frames.
 ## SavedVariables: FrameInspectDB
