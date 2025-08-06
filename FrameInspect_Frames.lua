@@ -540,6 +540,10 @@ local getObjectName = function(object)
                 end
             end
         else
+            local parentKey = object:GetParentKey()
+            if (parentKey and _G[object:GetParent():GetName()]) then
+                path = object:GetParent():GetName() .. "." .. parentKey
+            end
             return path
         end
     end
@@ -572,7 +576,7 @@ local animationWithOriginFilter = {Scale = true, Rotation = true}
 
 --all information displayed in the frame info (read only table)
 frameInspect.PropertiesList = {
-    {name = "Name", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, getObjectName(frame), line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
+    {name = "Name", funcGet =  function(frame, line, setAsDefault) local fName = getObjectName(frame); if (_G[fName]) then line.rightText:SetText("global") else line.rightText:SetText("") end return canSetAsDefault(frame, fName, line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "-Unknown-", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
     {name = "Parent Path", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, getParentKeyPath(frame) or "", line, setAsDefault) end, funcSet = function(value) --[[to be defined]] end, type = "text"},
@@ -1065,6 +1069,11 @@ function frameInspect.CreateInformationFrame()
         textEntry:SetTextInsets(3, 3, 0, 0)
         frameInspect.FramesHoldingValues[lineId] = textEntry
 
+        local rightText = line:CreateFontString("$parentRightText", "artwork", "GameFontNormal")
+        rightText:SetPoint("right", textEntry.widget, "left", -4, 0)
+        DF:SetFontSize(rightText, 10)
+        DF:SetFontColor(rightText, "silver")
+
         --adjustment slider for numbers
         local onSliderAdjustedValueChanged = function(scalarX, scalarY, isLiteral, thisLine)
             local line = thisLine
@@ -1195,6 +1204,7 @@ function frameInspect.CreateInformationFrame()
 
         --register members
         line.text = text
+        line.rightText = rightText
         line.textEntry = textEntry
         line.resetDefaultButton  = resetDefaultButton
         line.backToParentButton  = backToParentButton
