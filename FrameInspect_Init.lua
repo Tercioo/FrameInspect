@@ -113,7 +113,11 @@ local toggleWindow = function(bVisibility)
 end
 
 function SlashCmdList.FRAMEINSPECT(msg, editbox)
-    toggleWindow()
+    if msg and _G[msg] and type(_G[msg]) == 'table' and _G[msg].GetObjectType then
+        FrameInspect.Inspect(_G[msg])
+    else
+        toggleWindow()
+    end
 end
 
 local handleSavedVariablesFrame = CreateFrame("frame")
