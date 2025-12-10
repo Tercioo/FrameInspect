@@ -13,6 +13,9 @@ local currentDepth = 1
 local mouseXPosition = 0
 local mouseYPosition = 0
 
+local mainFrameWidth = 600
+local mainFrameHeight = 500
+
 --get templates
 local options_dropdown_template = DF:GetTemplate ("dropdown", "OPTIONS_DROPDOWN_TEMPLATE")
 
@@ -29,6 +32,14 @@ onFocusText:SetText("F4: Inspect")
 local onFocusBorder = CreateFrame("frame", "FrameInspectBorderFrame", UIParent)
 onFocusBorder:EnableMouse(false)
 onFocusBorder.Border = DF:CreateBorderFrame(onFocusBorder, "$parentBorder")
+
+function frameInspect.ValidateString(object)
+    if (type(object) == "string") then
+        return object
+    else
+        return tostring(object)
+    end
+end
 
 --store frames which got mouse disabled by pressing ALT
 --when the mouse moves or inspecting is started, this list resets (enabling mouse on all frames again)
@@ -105,6 +116,7 @@ end
 function frameInspect.StartInspectingObject(object, isChildren)
     frameInspect.ClearDisabledMouseFrames()
     frameInspect.inspectingFrame = object
+    frameInspect.EditingPointIndex = 1
     onFocusTexture:SetColorTexture(0, 0, 0, 0)
     onFocusText:SetText("")
     frameInspect.MoveInspectIndicators(object, isChildren)
@@ -117,6 +129,7 @@ end
 
 function frameInspect.StopInspectingFrame()
     frameInspect.inspectingFrame = false
+    frameInspect.EditingPointIndex = 1
     frameInspect.ClearInformationFrame()
     frameInspect.MainFrame.childrenScrollBox.RefreshChildren()
 end
@@ -187,7 +200,8 @@ end
 function frameInspect.CanInspectObject(object)
     if (object and object.GetName) then
         local objectName = object:GetName()
-        if (objectName and objectName:find("FrameInspect")) then
+
+        if (type(objectName) == "string" and objectName:find("FrameInspect")) then
             return false
 
         elseif (object == UIParent) then
@@ -206,6 +220,7 @@ function frameInspect.IsNamePlate(frame)
     if (frame and frame.GetName) then
         local frameName = frame:GetName()
         if (frameName) then
+            frameName = frameInspect.ValidateString(frameName)
             if (frameName:find("NamePlate")) then
                 return true
             end
@@ -317,7 +332,9 @@ local getAnchorData = function(frame, dataIndex)
         return data[dataIndex]
     end
 
-    if (frame:GetNumPoints() == 0) then
+    local numPoints = frame:GetNumPoints()
+
+    if (numPoints == 0) then
         local data = {"", {}, "", 0, 0}
         if (dataIndex == 2) then
             return "-this object has no points-"
@@ -325,7 +342,26 @@ local getAnchorData = function(frame, dataIndex)
         return data[dataIndex]
     end
 
-    local anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY = frame:GetPoint(1)
+    local anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY = frame:GetPoint(frameInspect.EditingPointIndex)
+
+    if not anchorSide then
+        for i = frameInspect.EditingPointIndex-1, 1, -1 do
+            local aSide, aFrame, aFrameSide, aOffsetX, aOffsetY = frame:GetPoint(i)
+            if aSide then
+                anchorSide = aSide
+                anchorFrame = aFrame
+                anchorFrameSide = aFrameSide
+                anchorOffsetX = aOffsetX
+                anchorOffsetY = aOffsetY
+                break
+            end
+        end
+    end
+
+    if not anchorOffsetX then
+        print("FrameInspect: failed to get anchor point data.", frame:GetName(), "Point N:", frameInspect.EditingPointIndex, frame:GetObjectType())
+    end
+
     anchorOffsetX = DF:TruncateNumber(anchorOffsetX, 3) --attempt to compare number with nil
     anchorOffsetY = DF:TruncateNumber(anchorOffsetY, 3)
     local data = {anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY}
@@ -345,7 +381,7 @@ local setAnchorData = function(value, dataIndex)
         return
     end
 
-    local anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY = inspectingFrame:GetPoint(1)
+    local anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY = inspectingFrame:GetPoint(frameInspect.EditingPointIndex)
     local data = {anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY}
     data[dataIndex] = value
 
@@ -558,14 +594,14 @@ end
 
 --Frame Texture
 local hasTextFilter = {EditBox = true, FontString = true}
-local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, ScrollFrame = true}
-local frameAndRegionFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, ScrollFrame = true, FontString = true, Texture = true}
-local textureFilter = {Texture = true, MaskTexture = true}
+local frameFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, ScrollFrame = true, ModelScene = true}
+local frameAndRegionFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, ModelScene = true, PlayerModel = true, ScrollFrame = true, FontString = true, Texture = true}
+local textureFilter = {Texture = true, MaskTexture = true, SetRotation = true}
 local fontStringFilter = {FontString = true}
 local buttonFilter = {Button = true}
 local sliderFilter = {Slider = true}
 local layeredRegion = {Texture = true, FontString = true}
-local notForAnimationFilter = {Frame = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true, ScrollFrame = true, FontString = true}
+local notForAnimationFilter = {Frame = true, ModelScene = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true, ScrollFrame = true, FontString = true}
 local animationGroupFilter = {AnimationGroup = true}
 local animationFilter = {Rotation = true, Alpha = true, Translation = true, Scale = true}
 local animationAlphaFilter = {Alpha = true}
@@ -574,11 +610,13 @@ local animationRotationFilter = {Rotation = true}
 local animationScaleFilter = {Scale = true}
 local animationWithOriginFilter = {Scale = true, Rotation = true}
 
+frameInspect.EditingPointIndex = 1
+
 --all information displayed in the frame info (read only table)
 frameInspect.PropertiesList = {
     {name = "Name", funcGet =  function(frame, line, setAsDefault) local fName = getObjectName(frame); if (_G[fName]) then line.rightText:SetText("global") else line.rightText:SetText("") end return canSetAsDefault(frame, fName, line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
     {name = "Object Type", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetObjectType() or "-Unknown-", line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
-    {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetParent(value) end, type = "text"},
+    {name = "Parent", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetParent() and frame:GetParent():GetName() or "-parent has no name-", line, setAsDefault) end, funcSet = function(value) local newParent = _G[value] if newParent then frameInspect.GetInspectingObject():SetParent(newParent) end end, type = "text"},
     {name = "Parent Path", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, getParentKeyPath(frame) or "", line, setAsDefault) end, funcSet = function(value) --[[to be defined]] end, type = "text"},
 
     {name = "OnClick()", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
@@ -590,9 +628,15 @@ frameInspect.PropertiesList = {
     {name = "Scale", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetScale(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetScale(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 0.7, clamp = {0.1, 6}},
     {name = "Alpha", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetAlpha(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAlpha(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 0.7, clamp = {0, 1}},
     {name = "Alpha (Effective)", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, DF:TruncateNumber(frame:GetEffectiveAlpha(), 3), line, setAsDefault) end,   funcSet = function(value) --[[read only]] end, readOnly = true, type = "text", filter = frameFilter},
+
+    {name = "Num Points", funcGet =  function(frame, line, setAsDefault) local value = frame:GetNumPoints() return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 1) end, type = "numpoints", filter = notForAnimationFilter, readOnly = true},
     {name = "Anchor Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 1) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 1) end, type = "anchor", filter = notForAnimationFilter},
     {name = "Anchor Frame", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 2) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 2) end, type = "text", filter = notForAnimationFilter},
     {name = "Anchor Frame Side", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 3) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 3) end, type = "anchor", filter = notForAnimationFilter},
+    --refresh the scrollbox with all options of the frame
+
+
+
     {name = "Anchor Offset X", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 4) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 4) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
     {name = "Anchor Offset Y", funcGet =  function(frame, line, setAsDefault) local value = getAnchorData(frame, 5) return canSetAsDefault(frame, value, line, setAsDefault) end, funcSet = function(value) setAnchorData(value, 5) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
     {name = "Strata", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetFrameStrata(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetFrameStrata(value) end, type = "text", filter = frameFilter},
@@ -609,7 +653,7 @@ frameInspect.PropertiesList = {
     {name = "Max Value", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, select(2, frame:GetMinMaxValues()), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMinMaxValues(select(1, frameInspect.GetInspectingObject():GetMinMaxValues()), value) end, type = "text", filter = sliderFilter},
 
     {name = "Text", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:GetText(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetText(value) end, type = "text", filter = hasTextFilter},
-    {name = "Font Size", funcGet = function(frame, line, setAsDefault) local _, fontHeight = frame:GetFont(); return canSetAsDefault(frame, fontHeight, line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(fontName, value, fontFlags) end, type = "number", filter = hasTextFilter},
+    {name = "Font Size", funcGet = function(frame, line, setAsDefault) local _, fontHeight = frame:GetFont(); return canSetAsDefault(frame, Round(fontHeight), line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(fontName, value, fontFlags) end, type = "number", filter = hasTextFilter},
     {name = "Font Name", funcGet = function(frame, line, setAsDefault) local fontName = frame:GetFont(); return canSetAsDefault(frame, fontName, line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(value, fontHeight, fontFlags) end, type = "text", filter = hasTextFilter},
     {name = "Font Flags", funcGet = function(frame, line, setAsDefault) local _, _, fontFlags = frame:GetFont(); fontFlags = fontFlags or "NONE" return canSetAsDefault(frame, fontFlags, line, setAsDefault) end, funcSet = function(value) local fontName, fontHeight, fontFlags = frameInspect.GetInspectingObject():GetFont() frameInspect.GetInspectingObject():SetFont(fontName, fontHeight, value) end, type = "text", filter = hasTextFilter},
     {name = "Font Color", funcGet =  function(frame, line, setAsDefault) local r, g, b, a = frame:GetTextColor() return canSetAsDefault(frame, {r, g, b, a}, line, setAsDefault) end, funcSet = function(r, g, b, a) frameInspect.GetInspectingObject():SetTextColor(r, g, b, a) end, type = "color", filter = hasTextFilter},
@@ -618,12 +662,14 @@ frameInspect.PropertiesList = {
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
     {name = "Desaturated", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:IsDesaturated() and "true" or "false", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDesaturated((value == "true" and true) or false) end, type = "text", filter = textureFilter},
     {name = "Vertex Color", funcGet =  function(frame, line, setAsDefault) local r, g, b, a = frame:GetVertexColor() return canSetAsDefault(frame, {r, g, b, a}, line, setAsDefault) end, funcSet = function(r, g, b, a) frameInspect.GetInspectingObject():SetVertexColor(r, g, b, a) end, type = "color", filter = textureFilter},
+    {name = "Rotation", funcGet =  function(frame, line, setAsDefault) local rotation = frame:GetRotation() return canSetAsDefault(frame, rotation, line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetRotation(value) end, type = "number", filter = textureFilter},
     {name = "Draw Layer", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDrawLayer(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDrawLayer(value) end, type = "text", filter = layeredRegion},
     {name = "Sub Level", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetDrawLayer()), line, setAsDefault) end, funcSet = function(value) local drawLayer = frameInspect.GetInspectingObject():GetDrawLayer(); frameInspect.GetInspectingObject():SetDrawLayer(drawLayer, value) end, type = "text", filter = textureFilter},
     {name = "TexCoord Left", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(1, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "left", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Right", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(5, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "right", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Top", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(2, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "top", value) end, type = "number", filter = textureFilter},
     {name = "TexCoord Bottom", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, select(4, texture:GetTexCoord()), line, setAsDefault) end, funcSet = function(value) setTexCoord(frameInspect.GetInspectingObject(), "bottom", value) end, type = "number", filter = textureFilter},
+    {name = "Mask", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture.GetMaskTexture and texture:GetMaskTexture(1) and texture:GetMaskTexture(1):GetTexture() or "", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetMask(value) end, type = "text", filter = textureFilter},
 
     --animation group
     {name = "Looping", funcGet = function(animationGroup, line, setAsDefault) return canSetAsDefault(animationGroup, animationGroup:GetLooping(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetLooping(value) end, type = "text", filter = animationGroupFilter},
@@ -729,6 +775,14 @@ function frameInspect.ResetDefault(line)
 
     elseif (line.type == "boolean") then
         line.booleanDropdown:Select(defaultValue and 1 or 2, true) --select by index as selecting 'false' trigger another thing
+
+    elseif (line.type == "numpoints") then
+        line.textEntry.text = 1
+        frameInspect.EditingPointIndex = 1
+        line.selectPointDropdown:Refresh()
+        line.selectPointDropdown:Select(1, true)
+        --refresh the scrollbox with all options of the frame
+        frameInspect.MainFrame.PropertiesScrollBox:Refresh()
     end
 
     line.funcSet(defaultValue)
@@ -858,12 +912,17 @@ function frameInspect.CreateInformationFrame()
                     line.backToParentButton:Hide()
                     line.booleanDropdown:Hide()
                     line.anchorPointDropdown:Hide()
+                    line.selectPointDropdown:Hide()
                     line.adjustmentSlider:Hide()
 
                     if (line.type == "text") then
                         if (type(value) == "table" and line.name == "Texture") then
                             --texture is a texture object
                             value = value:GetTexture()
+                        end
+
+                        if (type(value) == "table") then
+                            value = tostring(value)
                         end
 
                         textEntry.text = value or "nil"
@@ -896,6 +955,13 @@ function frameInspect.CreateInformationFrame()
                         line.booleanDropdown:Show()
                         line.booleanDropdown:Select(value and 1 or 2, true) --select by index as selecting 'false' trigger another thing
                         textEntry.text = value and "true" or "false"
+                        textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
+
+                    elseif (line.type == "numpoints") then
+                        textEntry.text = value
+                        line.selectPointDropdown:Show()
+                        line.selectPointDropdown:Refresh()
+                        line.selectPointDropdown:Select(frameInspect.EditingPointIndex)
                         textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
                     end
 
@@ -1202,6 +1268,47 @@ function frameInspect.CreateInformationFrame()
         booleanDropdown:SetPoint("left", textEntry.widget, "right", 10, 0)
         booleanDropdown.lineId = lineId
 
+        local onSelectPointIndex = function(index)
+            frameInspect.EditingPointIndex = index
+            --refresh the scrollbox
+            frameInspect.MainFrame.PropertiesScrollBox:Refresh()
+        end
+
+        local generateSelectPointOptions = function()
+            local inspectingObject = frameInspect.GetInspectingObject()
+            if (not inspectingObject) then
+                inspectingObject = frameInspect.GetPreviewingObject()
+                if (not inspectingObject) then
+                    return {}
+                end
+            end
+
+            local options = {}
+
+            if (inspectingObject.GetNumPoints) then
+                local numPoints = inspectingObject:GetNumPoints()
+                for i = 1, numPoints do
+                    local anchorSide, anchorFrame, anchorFrameSide, anchorOffsetX, anchorOffsetY = inspectingObject:GetPoint(i)
+                    local pointName = "Point " .. i .. ": " .. (anchorSide or "")
+                    local pointValue = i
+                    options[#options+1] = {
+                        value = pointValue,
+                        label = pointName,
+                        onclick = function(_, _, value)
+                            onSelectPointIndex(value)
+                        end
+                    }
+                end
+            end
+
+            return options
+        end
+
+        local selectPointDropdown = DF:CreateDropDown(line, generateSelectPointOptions, 1, 120, 20, nil, "$parentSelectPointDropdown")
+        selectPointDropdown:SetTemplate(options_dropdown_template)
+        selectPointDropdown:SetPoint("left", textEntry.widget, "right", 10, 0)
+        selectPointDropdown.lineId = lineId
+
         --register members
         line.text = text
         line.rightText = rightText
@@ -1212,6 +1319,7 @@ function frameInspect.CreateInformationFrame()
         line.colorPicker  = colorPicker
         line.anchorPointDropdown = anchorPointDropdown
         line.booleanDropdown = booleanDropdown
+        line.selectPointDropdown = selectPointDropdown
 
         frameInspect.AllLines[lineId] = line
 
@@ -1221,7 +1329,7 @@ function frameInspect.CreateInformationFrame()
 
     --create the scrollbox lines
     for i = 1, frameInspect.FrameSettings.scroll_line_amount do
-        propertiesScrollBox:CreateLine(createPropertyLine, i)
+        propertiesScrollBox:CreateLine(createPropertyLine)
     end
 
     --create the mouse over routine

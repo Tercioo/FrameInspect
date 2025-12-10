@@ -36,10 +36,10 @@ frameInspect.DefaultValues = {} --store the original values of the frame
 
 frameInspect.FrameSettings = {
     width = 450,
-    height = 500,
+    height = 600,
     scroll_width = 424,
-    scroll_height = 455,
-    scroll_line_amount = 22,
+    scroll_height = 555,
+    scroll_line_amount = 27,
     scroll_line_height = 20,
     scroll_y = -25,
     frame_info_x = 5, --where the frame info starts
@@ -50,7 +50,7 @@ frameInspect.FrameSettings = {
     children_width = 242,
     children_button_width = 210,
     children_scroll_width = 216,
-    children_scroll_line_amount = 12,
+    children_scroll_line_amount = 14,
     children_scroll_line_height = 40,
     children_scroll_line_max_texture_name_length = 155,
 }

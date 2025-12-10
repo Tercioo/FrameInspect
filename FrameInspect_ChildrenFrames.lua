@@ -135,6 +135,13 @@ function frameInspect.CreateChildrenFrame()
                 end
 
                 if (objectType == "Texture" or objectType == "MaskTexture") then
+                    local hasTexture = object:GetTexture()
+                    if (not hasTexture) then
+                        line.valueText.text = "<no texture>"
+                        line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_texture]]
+                        return
+                    end
+
                     local setFromAtlas = false
                     local atlasName = object:GetAtlas()
                     if (atlasName) then
@@ -254,40 +261,55 @@ function frameInspect.CreateChildrenFrame()
         ["Font"] = true,
     }
 
+    ---@param t table already added table
+    ---@param objects table list of objects to add
+    local addToAlreadyAddedList = function(t, objects)
+        for _, object in ipairs(objects) do
+            t[object] = true
+        end
+    end
+
     function childrenScrollBox.RefreshChildren(object)
         childrenScrollBox.frameUnderInspection = object
 
         if (object) then
             local objects = {}
+            local alreadyAdded = {}
 
             if (object.GetChildren) then
                 local children = {object:GetChildren()}
                 DF.table.append(objects, children)
+                addToAlreadyAddedList(alreadyAdded, children)
             end
 
             if (object.GetRegions) then
                 local regions = {object:GetRegions()} --textures, fontstrings, etc...
                 DF.table.append(objects, regions)
+                addToAlreadyAddedList(alreadyAdded, regions)
             end
 
             if (object.GetAnimations) then
                 local animations = {object:GetAnimations()}
                 DF.table.append(objects, animations)
+                addToAlreadyAddedList(alreadyAdded, animations)
             end
 
-            for memberName, memberValue in pairs(object) do
-                if (type(memberValue) == "table") then
-                    if (memberValue.GetObjectType) then
-                        local objType = memberValue:GetObjectType()
+            for key, value in pairs(object) do
+                if (type(value) == "table") then -- and not alreadyAdded[value]
+                    if (value.GetObjectType) then
+                        local objType = value:GetObjectType()
                         if (not ignoredObjectTypes[objType]) then
-                            local childName = memberValue:GetName()
-                            if (not childName or not childName:find("FrameInspect")) then
-                                DF.table.addunique(objects, memberValue)
+                            local childName = value:GetName()
+                            if (type(childName) == "string" and (not childName or not childName:find("FrameInspect"))) then
+                                DF.table.addunique(objects, value)
+                                alreadyAdded[value] = true
                             end
                         end
                     end
                 end
             end
+
+            --get keys which are tables and are frames, textures, fontstrings, animations, etc...
 
             childrenFrame.currentParent = object
             childrenScrollBox:SetData(objects)
