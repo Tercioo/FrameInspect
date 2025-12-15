@@ -139,24 +139,32 @@ function frameInspect.CreateChildrenFrame()
                     if (not hasTexture) then
                         line.valueText.text = "<no texture>"
                         line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_texture]]
-                        return
-                    end
-
-                    local setFromAtlas = false
-                    local atlasName = object:GetAtlas()
-                    if (atlasName) then
-                        local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
-                        if (atlasInfo) then
-                            line.icon:SetAtlas(atlasName)
-                            line.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
-                            setFromAtlas = true
+                    else
+                        local setFromAtlas = false
+                        local atlasName = object:GetAtlas()
+                        if (atlasName) then
+                            local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
+                            if (atlasInfo) then
+                                line.icon:SetAtlas(atlasName)
+                                if (issecretvalue and issecretvalue(atlasName)) then
+                                    line.valueText:SetText(atlasName)
+                                else
+                                    line.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                end
+                                setFromAtlas = true
+                            end
                         end
-                    end
 
-                    if (not setFromAtlas) then
-                        line.icon.texture = object:GetTexture()
-                        line.icon:SetTexCoord(object:GetTexCoord())
-                        line.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                        if (not setFromAtlas) then
+                            line.icon.texture = object:GetTexture()
+                            line.icon:SetTexCoord(object:GetTexCoord())
+                            local thisTexture = object:GetTexture()
+                            if (issecretvalue and issecretvalue(thisTexture)) then
+                                line.valueText:SetText(thisTexture)
+                            else
+                                line.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                            end
+                        end
                     end
 
                 elseif (objectType == "FontString") then
@@ -237,7 +245,11 @@ function frameInspect.CreateChildrenFrame()
                             local atlasInfo = C_Texture.GetAtlasInfo(atlasName)
                             if (atlasInfo) then
                                 thisLine.icon:SetAtlas(atlasName)
+                                if (issecretvalue and issecretvalue(atlasName)) then
+                                    thisLine.valueText:SetText(atlasName)
+                                else
                                 thisLine.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                end
                                 setFromAtlas = true
                             end
                         end
@@ -245,7 +257,12 @@ function frameInspect.CreateChildrenFrame()
                         if (not setFromAtlas) then
                             thisLine.icon.texture = object:GetTexture()
                             thisLine.icon:SetTexCoord(object:GetTexCoord())
-                            thisLine.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                            local thisTexture = object:GetTexture()
+                            if (issecretvalue and issecretvalue(thisTexture)) then
+                                thisLine.valueText:SetText(object:GetTexture())
+                            else
+                                thisLine.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                            end
                         end
                     end
                 end
