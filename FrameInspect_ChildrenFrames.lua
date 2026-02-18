@@ -33,8 +33,10 @@ local getMemberNameInParentFrame = function(parentFrame, child)
     end
 
     local childName = child:GetName()
-    if (childName) then
+    if (childName and type(childName) == "string") then
         return "_G." .. childName, CONST_MEMBER_NAME_COLOR
+    elseif (childName) then
+        return tostring(childName), CONST_MEMBER_NAME_COLOR
     end
 
     local memoryAddress = tostring(child)
@@ -115,6 +117,7 @@ function frameInspect.CreateChildrenFrame()
                 line.valueText.text = ""
                 line.memberName.text = memberName
                 line.memberName.color = memberColor
+                line.memberName.editbox:SetTextColor(DF:ParseColors(memberColor))
 
                 line.currentParent = childrenFrame.currentParent
 
@@ -137,8 +140,8 @@ function frameInspect.CreateChildrenFrame()
                 if (objectType == "Texture" or objectType == "MaskTexture") then
                     local hasTexture = object:GetTexture()
                     if (not hasTexture) then
-                        line.valueText.text = "<no texture>"
-                        line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_texture]]
+                        --line.valueText.text = "<no texture>"
+                        line.icon.texture = ""
                     else
                         local setFromAtlas = false
                         local atlasName = object:GetAtlas()
@@ -149,7 +152,8 @@ function frameInspect.CreateChildrenFrame()
                                 if (issecretvalue and issecretvalue(atlasName)) then
                                     line.valueText:SetText(atlasName)
                                 else
-                                    line.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                    line.valueText:SetText(atlasName)
+                                    --line.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
                                 end
                                 setFromAtlas = true
                             end
@@ -162,18 +166,25 @@ function frameInspect.CreateChildrenFrame()
                             if (issecretvalue and issecretvalue(thisTexture)) then
                                 line.valueText:SetText(thisTexture)
                             else
-                                line.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                line.valueText:SetText(object:GetTexture())
                             end
                         end
                     end
 
                 elseif (objectType == "FontString") then
-                    line.valueText.text = object:GetText()
+                    if issecretvalue and issecretvalue(object:GetText()) then
+                        print(memberName .. " (secret):", object:GetText())
+                        --line.valueText:SetText(object:GetText() or "")
+                    else
+                        line.valueText:SetText(object:GetText() or "")
+                    end
+
+                    --line.valueText.text = object:GetText() or ""
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_string]]
 
                 elseif (objectType == "EditBox") then
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_editbox]]
-                    line.valueText.text = object:GetText()
+                    line.valueText:SetText(object:GetText() or "")
 
                 elseif (objectType == "Button") then
                     line.icon.texture = [[Interface\AddOns\FrameInspect\Images\icon_button]]
@@ -248,7 +259,8 @@ function frameInspect.CreateChildrenFrame()
                                 if (issecretvalue and issecretvalue(atlasName)) then
                                     thisLine.valueText:SetText(atlasName)
                                 else
-                                thisLine.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                thisLine.valueText:SetText(atlasName)
+                                --thisLine.valueText:SetTextTruncated(atlasName, frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
                                 end
                                 setFromAtlas = true
                             end
@@ -261,7 +273,8 @@ function frameInspect.CreateChildrenFrame()
                             if (issecretvalue and issecretvalue(thisTexture)) then
                                 thisLine.valueText:SetText(object:GetTexture())
                             else
-                                thisLine.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
+                                thisLine.valueText:SetText(object:GetTexture() or "")
+                                --thisLine.valueText:SetTextTruncated(object:GetTexture(), frameInspect.FrameSettings.children_scroll_line_max_texture_name_length)
                             end
                         end
                     end
@@ -481,6 +494,13 @@ function frameInspect.CreateChildrenFrame()
             line:SetBackdropColor(.3, .3, .3, 0.5)
         end
 
+        --highlight texture
+        local highlightTexture = DF:CreateImage(line, "white", 1, 1, "highlight", {0, 1, 0, 1}, "highlight", "$parentHighlight")
+        highlightTexture:SetAllPoints()
+        highlightTexture.alpha = 0.1
+        line:HookScript("OnEnter", function() highlightTexture:Show() end)
+        line:HookScript("OnLeave", function() highlightTexture:Hide() end)
+
         --icon to preview the texture
         local icon = DF:CreateImage(line, "", lineHeight-2, lineHeight-2, "artwork", {0, 1, 0, 1}, "icon", "$parentIcon")
         icon:SetPoint("left", line, "left", 2, 0)
@@ -488,12 +508,37 @@ function frameInspect.CreateChildrenFrame()
         icon.SetAnimation = iconMethod_SetAndPlayAnimation
 
         --value
-        local valueText = DF:CreateLabel(line, "", 10, "silver", "GameFontNormal", "valueText", "$parentValueText", "artwork")
-        valueText:SetPoint("left", icon, "right", 2, 7)
+        --local valueText = DF:CreateLabel(line, "", 10, "silver", "GameFontNormal", "valueText", "$parentValueText", "artwork")
+        --valueText:SetPoint("left", icon, "right", 2, 7)
+        local valueTextEntry = DF:CreateTextEntry(line, function()end, frameInspect.FrameSettings.children_button_width - 4 - lineHeight, 18, "valueText", "$parentValueText")
+        valueTextEntry:SetPoint("left", icon, "right", 2, 7)
+        valueTextEntry:SetBackdrop(nil)
+        valueTextEntry:SetHook("OnEditFocusGained", function()
+            if not IsShiftKeyDown() then
+                valueTextEntry:ClearFocus()
+                line:Click()
+            end
+        end)
+        valueTextEntry:SetHook("OnEnter", function() highlightTexture:SetParent(valueTextEntry.widget) highlightTexture.widget:Show() end)
+        valueTextEntry:SetHook("OnLeave", function() highlightTexture.widget:Hide() end)
+        valueTextEntry:EnableMouseMotion(false)
 
         --member name
-        local memberName = DF:CreateLabel(line, "", 10, CONST_MEMBER_NAME_COLOR, "GameFontNormal", "memberName", "$parentMemberName", "artwork")
-        memberName:SetPoint("left", icon, "right", 2, -8)
+        --local memberName = DF:CreateLabel(line, "", 10, CONST_MEMBER_NAME_COLOR, "GameFontNormal", "memberName", "$parentMemberName", "artwork")
+        --memberName:SetPoint("left", icon, "right", 2, -8)
+
+        local memberNameTextEntry = DF:CreateTextEntry(line, function()end, frameInspect.FrameSettings.children_button_width - 4 - lineHeight, 18, "memberName", "$parentMemberName")
+        memberNameTextEntry:SetPoint("left", icon, "right", 2, -8)
+        memberNameTextEntry:SetBackdrop(nil)
+        memberNameTextEntry:SetHook("OnEditFocusGained", function()
+            if not IsShiftKeyDown() then
+                memberNameTextEntry:ClearFocus()
+                line:Click()
+            end
+        end)
+        memberNameTextEntry:SetHook("OnEnter", function() highlightTexture:SetParent(memberNameTextEntry.widget) highlightTexture:Show() end)
+        memberNameTextEntry:SetHook("OnLeave", function() highlightTexture:Hide() end)
+        memberNameTextEntry:EnableMouseMotion(false)
 
         --is hidden text
         local isHiddenText = DF:CreateLabel(line, "hidden", 10, "gray", "GameFontNormal", "hiddenText", "$parentHiddenText", "artwork")
@@ -510,6 +555,7 @@ function frameInspect.CreateChildrenFrame()
         local visibilityButton = DF:CreateButton(line, toggleVisibilityCallback, 20, 20, nil, nil, nil, nil, nil, "$parentVisibilityButton")
         visibilityButton:SetIcon("Interface\\LFGFRAME\\BattlenetWorking1", 12, 12, "overlay", {0.2, .8, 0.2, .8}, {1, 1, 1}, 0, 0, 0, false)
         visibilityButton:SetPoint("topright", line, "topright", 0, 0)
+        visibilityButton:SetFrameLevel(valueTextEntry:GetFrameLevel()+1)
         visibilityButton.SetIconForCurrentVisibility = function(self)
             if (line.childObject:IsShown()) then
                 line.visibilityButton:SetIcon("Interface\\LFGFRAME\\BattlenetWorking1", 12, 12, "overlay", {0.2, .8, 0.2, .8}, {1, 1, 1}, 0, 0, 0, false)
@@ -519,10 +565,7 @@ function frameInspect.CreateChildrenFrame()
         end
         line.visibilityButton = visibilityButton
 
-        --highlight texture
-        local highlightTexture = DF:CreateImage(line, "white", 1, 1, "highlight", {0, 1, 0, 1}, "highlight", "$parentHighlight")
-        highlightTexture:SetAllPoints()
-        highlightTexture.alpha = 0.1
+
         return line
     end
 

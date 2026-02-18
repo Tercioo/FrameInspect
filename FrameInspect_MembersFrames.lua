@@ -79,32 +79,42 @@ function frameInspect.CreateMembersFrame()
                 line.childObject = memberTable
 
                 line.playButton:Hide()
+                line.secretValueFontString:SetText("")
+                line.valueText.text = ""
+                line.memberName.text = memberTable.key
+
+                local isSecret = issecretvalue and issecretvalue(memberTable.value)
+                if isSecret then
+                    line:SetBackdropColor(0.5, 0, 0, 0.4)
+                    line.secretValueFontString:SetText(memberTable.value)
+                else
+                    line:SetBackdropColor(unpack(line.backdropColor))
+                end
 
                 if (memberTable.valueType == "table") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_table.tga]], nil, nil, "TRILINEAR")
-                    line.memberName.text = memberTable.key
                     line.valueText.text = "table"
                     line.playButton:Show()
 
                 elseif (memberTable.valueType == "boolean") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_bool.tga]], nil, nil, "TRILINEAR")
-                    line.memberName.text = memberTable.key
-                    line.valueText.text = memberTable.value and "True" or "False"
+                    pcall(function() line.valueText.text = memberTable.value and "True" or "False" end)
 
                 elseif (memberTable.valueType == "string") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_string.tga]], nil, nil, "TRILINEAR")
-                    line.memberName.text = memberTable.key
-                    line.valueText.text = memberTable.value
+                    pcall(function() line.valueText.text = memberTable.value end)
 
                 elseif (memberTable.valueType == "number") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_number.tga]], nil, nil, "TRILINEAR")
-                    line.memberName.text = memberTable.key
-                    line.valueText.text = tostring(memberTable.value)
+                    if not isSecret then
+                        pcall(function() line.valueText.text = memberTable.value end)
+                    end
 
                 elseif (memberTable.valueType == "function") then
                     line.icon:SetTexture([[Interface\AddOns\FrameInspect\Images\icon_function.tga]], nil, nil, "TRILINEAR")
-                    line.memberName.text = memberTable.key
-                    line.valueText.text = "function"
+                    if not isSecret then
+                        pcall(function() line.valueText.text = "function" end)
+                    end
                     line.playButton:Show()
                 end
 
@@ -206,9 +216,12 @@ function frameInspect.CreateMembersFrame()
         line:SetBackdrop({bgFile = [[Interface\Tooltips\UI-Tooltip-Background]], tileSize = 64, tile = true})
         if (lineId % 2 == 0) then
             line:SetBackdropColor(.2, .2, .2, 0.5)
+            line.backdropColor = {.2, .2, .2, 0.5}
         else
             line:SetBackdropColor(.3, .3, .3, 0.5)
+            line.backdropColor = {.3, .3, .3, 0.5}
         end
+
 
         --icon to preview the texture
         local icon = DF:CreateImage(line, "", lineHeight-2, lineHeight-2, "artwork", {0, 1, 0, 1}, "icon", "$parentIcon")
@@ -224,6 +237,10 @@ function frameInspect.CreateMembersFrame()
             highlightTexture:SetAllPoints(line)
             highlightTexture.alpha = 0.1
         end
+
+        local secretValueFontString = line:CreateFontString("$parentSecretValueText", "overlay", "GameFontNormal")
+        secretValueFontString:SetPoint("left", icon.widget, "right", 2, -9)
+        line.secretValueFontString = secretValueFontString
 
         --member name
         local memberNameTextEntry = DF:CreateTextEntry(line, function()end, frameInspect.FrameSettings.children_button_width - 4 - lineHeight, 18, "memberName", "$parentMemberName")

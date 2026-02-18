@@ -315,7 +315,7 @@ local onUpdateRoutine = function(self, deltaTime)
 
         --don't inspect our own frames or nameplates
         local frameName = objectUnderMousePointer:GetName()
-        if (frameName and (frameName:find("FrameInspect") or frameName:find("NamePlate"))) then
+        if (frameName and type(frameName) == "string" and (frameName:find("FrameInspect") or frameName:find("NamePlate"))) then
             frameInspect.ClearInformationFrame()
             frameInspect.ClearChildrenFrame()
             return
@@ -615,7 +615,7 @@ local frameAndRegionFilter = {Frame = true, Slider = true, Button = true, CheckB
 local textureFilter = {Texture = true, MaskTexture = true, SetRotation = true}
 local fontStringFilter = {FontString = true}
 local buttonFilter = {Button = true}
-local sliderFilter = {Slider = true}
+local sliderFilter = {Slider = true, StatusBar = true}
 local layeredRegion = {Texture = true, FontString = true}
 local notForAnimationFilter = {Frame = true, ModelScene = true, Slider = true, Button = true, CheckButton = true, EditBox = true, Minimap = true, StatusBar = true, PlayerModel = true, Texture = true, MaskTexture = true, ScrollFrame = true, FontString = true}
 local animationGroupFilter = {AnimationGroup = true}
@@ -638,6 +638,7 @@ frameInspect.PropertiesList = {
     {name = "OnClick()", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, getFunctionName(frame:GetScript("OnClick")), line, setAsDefault) end, filter = buttonFilter, funcSet = function(value) --[[read only]] end, readOnly = true, type = "text"},
 
     {name = "Is Shown", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:IsShown(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetShown(value) end, type = "boolean", filter = notForAnimationFilter},
+    {name = "Is Visible", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frame:IsVisible(), line, setAsDefault) end, funcSet = function(value) --[[read only]] end, type = "boolean", readOnly = true, filter = notForAnimationFilter},
 
     {name = "Width", funcGet =  function(frame, line, setAsDefault) return canSetAsDefault(frame, frameInspect.TruncateNumber(frame:GetWidth(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetWidth(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
     {name = "Height", funcGet = function(frame, line, setAsDefault) return canSetAsDefault(frame, frameInspect.TruncateNumber(frame:GetHeight(), 3), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetHeight(value) end, type = "number", filter = notForAnimationFilter, scaleBy = 5},
@@ -677,6 +678,7 @@ frameInspect.PropertiesList = {
     {name = "Texture", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetTextureFilePath(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetTexture(value) end, type = "text", filter = textureFilter},
     {name = "Atlas", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetAtlas(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetAtlas(value) end, type = "text", filter = textureFilter},
     {name = "Desaturated", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:IsDesaturated() and "true" or "false", line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDesaturated((value == "true" and true) or false) end, type = "text", filter = textureFilter},
+    {name = "Desaturation", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDesaturation(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDesaturation(value) end, type = "text", filter = textureFilter},
     {name = "Vertex Color", funcGet =  function(frame, line, setAsDefault) local r, g, b, a = frame:GetVertexColor() return canSetAsDefault(frame, {r, g, b, a}, line, setAsDefault) end, funcSet = function(r, g, b, a) frameInspect.GetInspectingObject():SetVertexColor(r, g, b, a) end, type = "color", filter = textureFilter},
     {name = "Rotation", funcGet =  function(frame, line, setAsDefault) local rotation = frame:GetRotation() return canSetAsDefault(frame, rotation, line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetRotation(value) end, type = "number", filter = textureFilter},
     {name = "Draw Layer", funcGet = function(texture, line, setAsDefault) return canSetAsDefault(texture, texture:GetDrawLayer(), line, setAsDefault) end, funcSet = function(value) frameInspect.GetInspectingObject():SetDrawLayer(value) end, type = "text", filter = layeredRegion},
@@ -832,6 +834,8 @@ function frameInspect.CreateInformationFrame()
     mainFrame:SetFrameStrata("FULLSCREEN")
     frameInspect.MainFrame = mainFrame
 
+    frameInspect.ShowRunWindow(mainFrame)
+
     frameInspect.lockOnFrameLabel = DF:CreateLabel(mainFrame, "PRESS F4 TO LOCK/UNLOCK ON FRAME")
     frameInspect.lockOnFrameLabel.color = "white"
     frameInspect.lockOnFrameLabel.fontsize = 18
@@ -941,7 +945,12 @@ function frameInspect.CreateInformationFrame()
                             value = tostring(value)
                         end
 
-                        textEntry.text = value or "nil"
+                        if (issecretvalue and issecretvalue(value)) then
+                            print(lineInfo.name, ":", value)
+                            textEntry.text = "shhh, it's a secret."
+                        else
+                            textEntry.text = value or "nil"
+                        end
                         textEntry:SetWidth(frameInspect.FrameSettings.width - frameInspect.FrameSettings.frame_info_text2_x - 30)
 
                         if (lineInfo.name == "Parent") then
@@ -956,13 +965,22 @@ function frameInspect.CreateInformationFrame()
                         colorPicker:Show()
 
                     elseif (line.type == "number") then
+                        if issecretvalue and issecretvalue(value) then
+                            print(lineInfo.name, ":", value)
+                            value = "shhh, it's a secret."
+                        end
                         textEntry:SetText(value)
                         textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
                         adjustmentSlider:Show()
                         adjustmentSlider:SetScaleFactor(lineInfo.scaleBy)
 
                     elseif (line.type == "anchor") then
-                        textEntry.text = value
+                        if issecretvalue and issecretvalue(value) then
+                            print(lineInfo.name, ":", value)
+                            value = "shhh, it's a secret."
+                        else
+                            textEntry:SetText(value)
+                        end
                         textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
                         anchorPointDropdown:Show()
                         anchorPointDropdown:Select(value:upper())
@@ -970,8 +988,19 @@ function frameInspect.CreateInformationFrame()
                     elseif (line.type == "boolean") then
                         line.booleanDropdown:Show()
                         line.booleanDropdown:Select(value and 1 or 2, true) --select by index as selecting 'false' trigger another thing
-                        textEntry.text = value and "true" or "false"
+                        if issecretvalue and issecretvalue(value) then
+                            print(lineInfo.name, ":", value)
+                            textEntry.text = "shhh, it's a secret."
+                        else
+                            textEntry.text = value and "true" or "false"
+                        end
                         textEntry:SetWidth(frameInspect.FrameSettings.frame_info_text2_width)
+
+                        if (lineInfo.readOnly) then
+                            line.booleanDropdown:Disable()
+                        else
+                            line.booleanDropdown:Enable()
+                        end
 
                     elseif (line.type == "numpoints") then
                         textEntry.text = value

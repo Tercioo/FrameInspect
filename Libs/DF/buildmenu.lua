@@ -115,6 +115,44 @@ detailsFramework.OptionsFrameMixin = {
 
 }
 
+detailsFramework.ValidBuildMenuWidgetTypes = {
+    ["label"] = true,
+    ["select"] = true,
+    ["toggle"] = true,
+    ["range"] = true,
+    ["color"] = true,
+    ["execute"] = true,
+    ["textentry"] = true,
+    ["image"] = true,
+    ["space"] = true,
+    ["blank"] = true,
+    ["fontdropdown"] = true,
+    ["texturedropdown"] = true,
+    ["colordropdown"] = true,
+    ["outlinedropdown"] = true,
+    ["anchordropdown"] = true,
+    ["audiodropdown"] = true,
+    ["dropdown"] = true,
+    ["switch"] = true,
+    ["slider"] = true,
+    ["button"] = true,
+    ["selectfont"] = true,
+    ["selectstatusbartexture"] = true,
+    ["selectcolor"] = true,
+    ["selectoutline"] = true,
+    ["selectanchor"] = true,
+    ["selectaudio"] = true,
+    ["selectframestrata"] = true,
+    ["backgrounddropdown"] = true,
+    ["selectbackgroundtexture"] = true,
+    ["borderdropdown"] = true,
+    ["selectbordertexture"] = true
+}
+
+function detailsFramework:IsValidWidgetForBuildMenu(widgetType)
+    return detailsFramework.ValidBuildMenuWidgetTypes[widgetType] or false
+end
+
 local onWidgetSetInUse = function(widget, widgetTable)
     if (widgetTable.childrenids) then
         widget.childrenids = widgetTable.childrenids
@@ -875,6 +913,12 @@ local parseOptionsTypes = function(menuOptions)
 
         elseif (widgetTable.type == "fontdropdown") then
             widgetTable.type = "selectfont"
+        elseif (widgetTable.type == "texturedropdown") then
+            widgetTable.type = "selectstatusbartexture"
+        elseif (widgetTable.type == "backgrounddropdown") then
+            widgetTable.type = "selectbackgroundtexture"
+        elseif (widgetTable.type == "borderdropdown") then
+            widgetTable.type = "selectbordertexture"
         elseif (widgetTable.type == "colordropdown") then
             widgetTable.type = "selectcolor"
         elseif (widgetTable.type == "outlinedropdown") then
@@ -1226,6 +1270,7 @@ function detailsFramework:BuildMenuVolatile(parent, menuOptions, xOffset, yOffse
                     ---@cast widgetTable df_menu_dropdown
                     assert(widgetTable.get, "DetailsFramework:BuildMenu: .get() not found in the widget table for 'select'")
                     local dropdown = getMenuWidgetVolative(parent, "dropdown", widgetIndexes)
+                    dropdown:SetTemplate(dropdownTemplate)
                     widgetCreated = dropdown
                     local defaultHeight = 18
 
@@ -1303,6 +1348,7 @@ function detailsFramework:BuildMenuVolatile(parent, menuOptions, xOffset, yOffse
                     slider.hasLabel:SetTemplate(widgetTable.text_template or textTemplate)
 
                     maxColumnWidth, maxWidgetWidth = setRangeProperties(parent, slider, widgetTable, currentXOffset, currentYOffset, sliderTemplate, widgetWidth, widgetHeight, bAlignAsPairs, nAlignAsPairsLength, valueChangeHook, maxColumnWidth, maxWidgetWidth, widgetTable.usedecimals, bAttachSliderButtonsToLeft)
+                    slider:SetTemplate(sliderTemplate)
                     amountLineWidgetAdded = amountLineWidgetAdded + 1
 
                 --color
