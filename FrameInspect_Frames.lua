@@ -1068,7 +1068,7 @@ function frameInspect.CreateInformationFrame()
             local lineInfo = self:GetLineInfo()
 
             local clamp = lineInfo.clamp
-            if (clamp) then
+            if (clamp and type(value) == "number") then
                 value = Clamp(value, unpack(clamp))
             end
 

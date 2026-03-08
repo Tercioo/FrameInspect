@@ -326,9 +326,9 @@ function frameInspect.CreateChildrenFrame()
 
             for key, value in pairs(object) do
                 if (type(value) == "table") then -- and not alreadyAdded[value]
-                    if (value.GetObjectType) then
-                        local objType = value:GetObjectType()
-                        if (not ignoredObjectTypes[objType]) then
+                    if (value.GetObjectType and type(value.GetObjectType) == "function") then
+                        local success, objType = pcall(value.GetObjectType, value)
+                        if (success and not ignoredObjectTypes[objType]) then
                             local childName = value:GetName()
                             if (type(childName) == "string" and (not childName or not childName:find("FrameInspect"))) then
                                 DF.table.addunique(objects, value)

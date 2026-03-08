@@ -10,6 +10,8 @@
 libs\libs.xml
 #@end-no-lib-strip@
 
+indent.lua
+
 FrameInspect_Init.lua
 FrameInspect_ChildrenFrames.lua
 FrameInspect_MembersFrames.lua
