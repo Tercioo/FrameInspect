@@ -115,7 +115,10 @@ end
 function SlashCmdList.FRAMEINSPECT(msg, editbox)
     if msg and _G[msg] and type(_G[msg]) == 'table' and _G[msg].GetObjectType then
         FrameInspect.Inspect(_G[msg])
-    elseif msg and msg == "makeclass" then
+        return
+    end
+
+    if msg and msg == "makeclass" then
         local object = frameInspect.GetInspectingObject()
         local widgets = {}
 
